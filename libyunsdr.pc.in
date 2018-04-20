@@ -1,0 +1,10 @@
+prefix=@CMAKE_INSTALL_PREFIX@
+exec_prefix=${prefix}
+libdir=${exec_prefix}/lib
+includedir=${prefix}/include
+
+Name: libyunsdr
+Description: API for the YunSDR devices
+Version: 1.0
+Libs: -L${libdir} -lyunsdr
+Cflags: -I${includedir}
