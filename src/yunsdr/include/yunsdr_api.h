@@ -140,6 +140,24 @@ DLLEXPORT int32_t yunsdr_get_tx_sampling_freq (YUNSDR_DESCRIPTOR *yunsdr, uint32
 /* Get current TX LO frequency. */
 DLLEXPORT int32_t yunsdr_get_tx_lo_freq (YUNSDR_DESCRIPTOR *yunsdr, uint64_t *lo_freq_hz);
 
+/* Gets the RX FIR state. */
+DLLEXPORT int32_t yunsdr_get_rx_fir_en_dis(YUNSDR_DESCRIPTOR *yunsdr, uint8_t *en_dis);
+
+/* Gets the TX FIR state. */
+DLLEXPORT int32_t yunsdr_get_tx_fir_en_dis(YUNSDR_DESCRIPTOR *yunsdr, uint8_t *en_dis);
+
+/* Sets the RX FIR state. */
+DLLEXPORT int32_t yunsdr_set_rx_fir_en_dis(YUNSDR_DESCRIPTOR *yunsdr, uint8_t en_dis);
+
+/* Sets the TX FIR state. */
+DLLEXPORT int32_t yunsdr_set_tx_fir_en_dis(YUNSDR_DESCRIPTOR *yunsdr, uint8_t en_dis);
+
+/* Load TX/RX FIR configure data from file. */
+DLLEXPORT int32_t yunsdr_set_trx_fir_config(YUNSDR_DESCRIPTOR *yunsdr, char *fir_config);
+
+/* Sets the TRX FIR state. */
+DLLEXPORT int32_t yunsdr_set_trx_fir_en_dis(YUNSDR_DESCRIPTOR *yunsdr, uint8_t en_dis);
+
 /* Dump current value of yunsdr's register. */
 DLLEXPORT int32_t yunsdr_dump_register (YUNSDR_DESCRIPTOR *yunsdr,
 		uint16_t regid, uint32_t *reg_val);

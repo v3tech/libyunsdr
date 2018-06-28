@@ -40,6 +40,8 @@
 
 #include "yunsdr_api.h"
 
+#define ARRAY_SIZE(arr) (sizeof(arr) / sizeof((arr)[0]))// + __must_be_array(arr))
+
 enum TRANS_ID{
 	TRANSPORT_NONE,
 	TRANSPORT_CMD,
@@ -78,6 +80,61 @@ typedef struct yunsdr_device_descriptor {
 	YUNSDR_META *rx_meta;
 }YUNSDR_DESCRIPTOR;
 
+enum fir_dest {
+	FIR_TX1 = 0x01,
+	FIR_TX2 = 0x02,
+	FIR_TX1_TX2 = 0x03,
+	FIR_RX1 = 0x81,
+	FIR_RX2 = 0x82,
+	FIR_RX1_RX2 = 0x83,
+	FIR_IS_RX = 0x80,
+};
+
+typedef struct
+{
+	uint32_t	rx;				/* 1, 2, 3(both) */
+	int32_t		rx_gain;		/* -12, -6, 0, 6 */
+	uint32_t	rx_dec;			/* 1, 2, 4 */
+	int16_t		rx_coef[128];
+	uint8_t		rx_coef_size;
+	uint32_t	rx_path_clks[6];
+	uint32_t	rx_bandwidth;
+}AD9361_RXFIRConfig;
+
+typedef struct
+{
+	uint32_t	tx;				/* 1, 2, 3(both) */
+	int32_t		tx_gain;		/* -6, 0 */
+	uint32_t	tx_int;			/* 1, 2, 4 */
+	int16_t		tx_coef[128];
+	uint8_t		tx_coef_size;
+	uint32_t	tx_path_clks[6];
+	uint32_t	tx_bandwidth;
+}AD9361_TXFIRConfig;
+
+static int16_t fir_128_4[] = {
+	-15,-27,-23,-6,17,33,31,9,-23,-47,-45,-13,34,69,67,21,-49,-102,-99,-32,69,146,143,48,-96,-204,-200,-69,129,278,275,97,-170,
+	-372,-371,-135,222,494,497,187,-288,-654,-665,-258,376,875,902,363,-500,-1201,-1265,-530,699,1748,1906,845,-1089,-2922,-3424,
+	-1697,2326,7714,12821,15921,15921,12821,7714,2326,-1697,-3424,-2922,-1089,845,1906,1748,699,-530,-1265,-1201,-500,363,902,875,
+	376,-258,-665,-654,-288,187,497,494,222,-135,-371,-372,-170,97,275,278,129,-69,-200,-204,-96,48,143,146,69,-32,-99,-102,-49,21,
+	67,69,34,-13,-45,-47,-23,9,31,33,17,-6,-23,-27,-15};
+
+static int16_t fir_128_2[] = {
+	-0,0,1,-0,-2,0,3,-0,-5,0,8,-0,-11,0,17,-0,-24,0,33,-0,-45,0,61,-0,-80,0,104,-0,-134,0,169,-0,
+	-213,0,264,-0,-327,0,401,-0,-489,0,595,-0,-724,0,880,-0,-1075,0,1323,-0,-1652,0,2114,-0,-2819,0,4056,-0,-6883,0,20837,32767,
+	20837,0,-6883,-0,4056,0,-2819,-0,2114,0,-1652,-0,1323,0,-1075,-0,880,0,-724,-0,595,0,-489,-0,401,0,-327,-0,264,0,-213,-0,
+	169,0,-134,-0,104,0,-80,-0,61,0,-45,-0,33,0,-24,-0,17,0,-11,-0,8,0,-5,-0,3,0,-2,-0,1,0,-0, 0 };
+
+static int16_t fir_96_2[] = {
+	-4,0,8,-0,-14,0,23,-0,-36,0,52,-0,-75,0,104,-0,-140,0,186,-0,-243,0,314,-0,-400,0,505,-0,-634,0,793,-0,
+	-993,0,1247,-0,-1585,0,2056,-0,-2773,0,4022,-0,-6862,0,20830,32767,20830,0,-6862,-0,4022,0,-2773,-0,2056,0,-1585,-0,1247,0,-993,-0,
+	793,0,-634,-0,505,0,-400,-0,314,0,-243,-0,186,0,-140,-0,104,0,-75,-0,52,0,-36,-0,23,0,-14,-0,8,0,-4,0};
+
+static int16_t fir_64_2[] = {
+	-58,0,83,-0,-127,0,185,-0,-262,0,361,-0,-488,0,648,-0,-853,0,1117,-0,-1466,0,1954,-0,-2689,0,3960,-0,-6825,0,20818,32767,
+	20818,0,-6825,-0,3960,0,-2689,-0,1954,0,-1466,-0,1117,0,-853,-0,648,0,-488,-0,361,0,-262,-0,185,0,-127,-0,83,0,-58,0};
+
+
 
 #define MAX_TX_BUFFSIZE (32*1024*1024)
 #define MAX_RX_BUFFSIZE (32*1024*1024)
@@ -94,6 +151,24 @@ typedef struct yunsdr_device_descriptor {
 
 static int __yunsdr_init_transport(YUNSDR_DESCRIPTOR *yunsdr, enum TRANS_ID port);
 static void __yunsdr_deinit_transport(YUNSDR_DESCRIPTOR *yunsdr, enum TRANS_ID port);
+
+#if defined(__WINDOWS_) || defined(_WIN32)
+static char *strsep( char **string, const char *delim )
+{
+	assert( delim );
+	if( *string == NULL ) return NULL;
+	char *next = strstr( *string, delim );
+	char *orig = *string;
+	if( next == NULL )
+		*string = NULL;
+	else
+	{
+		*next = '\0';
+		*string = next + strlen( delim );
+	}
+	return orig;
+}
+#endif
 
 uint64_t yunsdr_ticksToTimeNs(const uint64_t ticks, const double rate)
 {
@@ -218,7 +293,7 @@ static int32_t __yunsdr_init_meta(YUNSDR_META **meta)
 {
 	int32_t ret;
 
-	*meta = (YUNSDR_META *)calloc(1, MAX_TX_BUFFSIZE + sizeof(YUNSDR_META));
+	*meta = (YUNSDR_META *)calloc(1, MAX_RX_BUFFSIZE + sizeof(YUNSDR_META));
 	if (!*meta) {
 		ret = -1;
 	} else {
@@ -307,15 +382,119 @@ int32_t yunsdr_set_rx_rf_bandwidth (YUNSDR_DESCRIPTOR *yunsdr,
 	return __trans_cmd_send(yunsdr->transport, (void *)cmd, sizeof(cmd));
 }
 
+static int yunsdr_set_bb_rate(YUNSDR_DESCRIPTOR *yunsdr, unsigned long rate)
+{
+	uint32_t current_rate;
+	int dec, taps, ret;
+	uint8_t enable;
+	int16_t *fir;
+
+	if (rate <= 20000000UL) {
+		dec = 4;
+		taps = 128;
+		fir = fir_128_4;
+	} else if (rate <= 40000000UL) {
+		dec = 2;
+		fir = fir_128_2;
+		taps = 128;
+	} else if (rate <= 53333333UL) {
+		dec = 2;
+		fir = fir_96_2;
+		taps = 96;
+	} else {
+		dec = 2;
+		fir = fir_64_2;
+		taps = 64;
+	}
+
+	ret = yunsdr_get_rx_sampling_freq (yunsdr, &current_rate);
+	if (ret < 0)
+		return ret;
+
+	ret = yunsdr_get_rx_fir_en_dis(yunsdr, &enable);
+	if (ret < 0)
+		return ret;
+
+	if (enable) {
+		if (current_rate <= (25000000 / 12)) {
+			uint32_t cmd[2];
+			cmd[0] = 0xf0220000|(17<<8);
+			cmd[1] = 3000000;
+			ret = __trans_cmd_send(yunsdr->transport, (void *)cmd, sizeof(cmd));
+			if (ret < 0)
+				return ret;
+		}
+
+		ret = yunsdr_set_trx_fir_en_dis(yunsdr, 0);
+		if (ret < 0)
+			return ret;
+	}
+
+	AD9361_RXFIRConfig rx_fir_config;
+	rx_fir_config.rx = 3;
+	rx_fir_config.rx_gain = -6;
+	rx_fir_config.rx_dec = dec;
+	memcpy(rx_fir_config.rx_coef, fir, taps*sizeof(int16_t));
+	rx_fir_config.rx_coef_size = taps;
+	memset(rx_fir_config.rx_path_clks, 0, sizeof(rx_fir_config.rx_path_clks));
+	rx_fir_config.rx_bandwidth = 0;
+
+	{
+		uint32_t cmd[2+sizeof(AD9361_RXFIRConfig)];
+		cmd[0] = 0xf0220000|(31<<8);
+		cmd[1] = 0;
+		memcpy(&cmd[2], &rx_fir_config, sizeof(AD9361_RXFIRConfig));
+		ret =  __trans_cmd_send(yunsdr->transport, (void *)cmd, sizeof(cmd));
+		if (ret < 0)
+			return ret;
+	}
+
+	AD9361_TXFIRConfig tx_fir_config;
+	tx_fir_config.tx = 3;
+	tx_fir_config.tx_gain = 0;
+	tx_fir_config.tx_int = dec;
+	memcpy(tx_fir_config.tx_coef, fir, taps*sizeof(int16_t));
+	tx_fir_config.tx_coef_size = taps;
+	memset(tx_fir_config.tx_path_clks, 0, sizeof(tx_fir_config.tx_path_clks));
+	tx_fir_config.tx_bandwidth = 0;
+
+	{
+		uint32_t cmd[2+sizeof(AD9361_TXFIRConfig)];
+		cmd[0] = 0xf0220000|(33<<8);
+		cmd[1] = 0;
+		memcpy(&cmd[2], &tx_fir_config, sizeof(AD9361_TXFIRConfig));
+		ret =  __trans_cmd_send(yunsdr->transport, (void *)cmd, sizeof(cmd));
+		if (ret < 0)
+			return ret;
+	}
+
+	uint32_t cmd[2];
+	cmd[0] = 0xf0220000|(17<<8);
+	cmd[1] = rate;
+	if (rate <= (25000000 / 12))  {
+		ret = yunsdr_set_trx_fir_en_dis(yunsdr, 1);
+		if (ret < 0)
+			return ret;
+		ret = __trans_cmd_send(yunsdr->transport, (void *)cmd, sizeof(cmd));
+		if (ret < 0)
+			return ret;
+	} else {
+		ret = __trans_cmd_send(yunsdr->transport, (void *)cmd, sizeof(cmd));
+		if (ret < 0)
+			return ret;
+		ret = yunsdr_set_trx_fir_en_dis(yunsdr, 1);
+		if (ret < 0)
+			return ret;
+	}
+
+	return 0;
+}
+
 /* Set the RX sampling frequency. */
 int32_t yunsdr_set_rx_sampling_freq (YUNSDR_DESCRIPTOR *yunsdr,
 		uint32_t sampling_freq_hz)
 {
-	uint32_t cmd[2];
-	cmd[0] = 0xf0220000|(17<<8);
-	cmd[1] = sampling_freq_hz;
-
-	return __trans_cmd_send(yunsdr->transport, (void *)cmd, sizeof(cmd));
+	return yunsdr_set_bb_rate(yunsdr, sampling_freq_hz);
 }
 
 /* Set the RX LO frequency. */
@@ -380,17 +559,11 @@ int32_t yunsdr_set_tx_rf_bandwidth (YUNSDR_DESCRIPTOR *yunsdr,
 	return __trans_cmd_send(yunsdr->transport, (void *)cmd, sizeof(cmd));
 }
 
-
 /* Set the TX sampling frequency. */
 int32_t yunsdr_set_tx_sampling_freq (YUNSDR_DESCRIPTOR *yunsdr,
 		uint32_t sampling_freq_hz)
 {
-	uint32_t cmd[2];
-
-	cmd[0] = 0xf0220000|(5<<8);
-	cmd[1] = sampling_freq_hz;
-
-	return __trans_cmd_send(yunsdr->transport, (void *)cmd, sizeof(cmd));
+	return yunsdr_set_bb_rate(yunsdr, sampling_freq_hz);
 }
 
 /* Set the TX LO frequency. */
@@ -408,6 +581,222 @@ int32_t yunsdr_set_tx_lo_freq (YUNSDR_DESCRIPTOR *yunsdr,
 	cmd[1] = (uint32_t)lo_freq_hz;
 
 	return __trans_cmd_send(yunsdr->transport, (void *)cmd, sizeof(cmd));
+}
+
+int32_t yunsdr_set_rx_fir_en_dis(YUNSDR_DESCRIPTOR *yunsdr, uint8_t en_dis)
+{
+	uint32_t cmd[2];
+
+	cmd[0] = 0xf0220000|(29<<8);
+	cmd[1] = (uint32_t)en_dis;
+
+	return __trans_cmd_send(yunsdr->transport, (void *)cmd, sizeof(cmd));
+}
+
+int32_t yunsdr_set_trx_fir_config(YUNSDR_DESCRIPTOR *yunsdr, char *fir_config)
+{
+	char *line;
+	int i = 0, ret, txc, rxc;
+	int tx = -1, tx_gain, tx_int;
+	int rx = -1, rx_gain, rx_dec;
+	short coef_tx[128];
+	short coef_rx[128];
+	uint32_t size;
+
+	if(fir_config == NULL) {
+		debug(DEBUG_ERR, "Invalid filter config file name!\n");
+		return -EINVAL;
+	}
+	FILE *fp;
+	if((fp = fopen(fir_config, "r")) == NULL){
+		debug(DEBUG_ERR, "Can not open filter config file!\n");
+		return -EEXIST;
+	}
+
+	fseek(fp , 0 , SEEK_END);
+	size = ftell(fp);
+	rewind(fp);
+	char *data = (char *)malloc(sizeof(char) * size);
+	if(data == NULL) {
+		debug(DEBUG_ERR, "Can not alloc memory for filter config file!\n");
+		return -ENOMEM;
+	}
+
+	ret = (int)fread(data, 1, size, fp);
+	if (ret != size-1) {
+		debug(DEBUG_ERR, "Can not read filter config file %d != %d!\n", ret, size);
+		free(data);
+		return -EACCES;
+	}
+	fclose(fp);
+	char *ptr = data;
+
+	while ((line = strsep(&ptr, "\n"))) {
+		if (line >= data + size) {
+			break;
+		}
+
+		if (line[0] == '#')
+			continue;
+
+		if (tx < 0) {
+			ret = sscanf(line, "TX %d GAIN %d INT %d",
+				     &tx, &tx_gain, &tx_int);
+			if (ret == 3)
+				continue;
+			else
+				tx = -1;
+		}
+		if (rx < 0) {
+			ret = sscanf(line, "RX %d GAIN %d DEC %d",
+				     &rx, &rx_gain, &rx_dec);
+			if (ret == 3)
+				continue;
+			else
+				rx = -1;
+		}
+
+		ret = sscanf(line, "%d,%d", &txc, &rxc);
+		if (ret == 1) {
+			if (i >= ARRAY_SIZE(coef_tx)){
+				break;
+				//return -EINVAL;
+			}
+
+			coef_tx[i] = coef_rx[i] = (short)txc;
+			i++;
+			continue;
+		} else if (ret == 2) {
+			if (i >= ARRAY_SIZE(coef_tx)) {
+				return -EINVAL;
+			}
+
+			coef_tx[i] = (short)txc;
+			coef_rx[i] = (short)rxc;
+			i++;
+			continue;
+		}
+	}
+
+	if (tx != -1) {
+		switch (tx) {
+		case FIR_TX1:
+		case FIR_TX2:
+		case FIR_TX1_TX2:
+		{
+			AD9361_TXFIRConfig tx_fir_config;
+			tx_fir_config.tx = tx;
+			tx_fir_config.tx_gain = tx_gain;
+			tx_fir_config.tx_int = tx_int;
+			memcpy(tx_fir_config.tx_coef, coef_tx, sizeof(coef_tx));
+			tx_fir_config.tx_coef_size = ARRAY_SIZE(coef_tx);
+			memset(tx_fir_config.tx_path_clks, 0, sizeof(tx_fir_config.tx_path_clks));
+			tx_fir_config.tx_bandwidth = 0;
+
+			uint32_t cmd[2+sizeof(AD9361_TXFIRConfig)];
+			cmd[0] = 0xf0220000|(33<<8);
+			cmd[1] = 0;
+			memcpy(&cmd[2], &tx_fir_config, sizeof(AD9361_TXFIRConfig));
+			ret =  __trans_cmd_send(yunsdr->transport, (void *)cmd, sizeof(cmd));
+
+			break;
+		}
+		default:
+			ret = -EINVAL;
+		}
+	}
+
+	if (rx != -1) {
+		switch (rx | FIR_IS_RX) {
+		case FIR_RX1:
+		case FIR_RX2:
+		case FIR_RX1_RX2:
+		{
+			AD9361_RXFIRConfig rx_fir_config;
+			rx_fir_config.rx = rx;
+			rx_fir_config.rx_gain = rx_gain;
+			rx_fir_config.rx_dec = rx_dec;
+			memcpy(rx_fir_config.rx_coef, coef_rx, sizeof(coef_rx));
+			rx_fir_config.rx_coef_size = ARRAY_SIZE(coef_rx);
+			memset(rx_fir_config.rx_path_clks, 0, sizeof(rx_fir_config.rx_path_clks));
+			rx_fir_config.rx_bandwidth = 0;
+
+			uint32_t cmd[2+sizeof(AD9361_RXFIRConfig)];
+			cmd[0] = 0xf0220000|(31<<8);
+			cmd[1] = 0;
+			memcpy(&cmd[2], &rx_fir_config, sizeof(AD9361_RXFIRConfig));
+			ret =  __trans_cmd_send(yunsdr->transport, (void *)cmd, sizeof(cmd));
+			break;
+		}
+		default:
+			ret = -EINVAL;
+		}
+	}
+
+	if (tx == -1 && rx == -1) {
+		ret = -EINVAL;
+	}
+	free(data);
+	if (ret < 0) {
+		return ret;
+	}
+
+	return size;
+}
+
+
+int32_t yunsdr_set_trx_fir_en_dis(YUNSDR_DESCRIPTOR *yunsdr, uint8_t en_dis)
+{
+	uint32_t cmd[2];
+
+	cmd[0] = 0xf0220000|(35<<8);
+	cmd[1] = (uint32_t)en_dis;
+
+	return __trans_cmd_send(yunsdr->transport, (void *)cmd, sizeof(cmd));
+}
+
+int32_t yunsdr_set_tx_fir_en_dis(YUNSDR_DESCRIPTOR *yunsdr, uint8_t en_dis)
+{
+	uint32_t cmd[2];
+
+	cmd[0] = 0xf0220000|(13<<8);
+	cmd[1] = (uint32_t)en_dis;
+
+	return __trans_cmd_send(yunsdr->transport, (void *)cmd, sizeof(cmd));
+}
+
+int32_t yunsdr_get_rx_fir_en_dis(YUNSDR_DESCRIPTOR *yunsdr, uint8_t *en_dis)
+{
+	int ret;
+	uint32_t cmd[2];
+
+	cmd[0] = 0xf0220000|(28<<8);
+	cmd[1] = 0;
+
+	ret = __trans_cmd_send_then_recv(yunsdr->transport, (void *)cmd, sizeof(cmd));
+	if(ret < 0)
+		*en_dis = 0;
+	else
+		*en_dis = cmd[1];
+
+	return ret;
+}
+
+int32_t yunsdr_get_tx_fir_en_dis(YUNSDR_DESCRIPTOR *yunsdr, uint8_t *en_dis)
+{
+	int ret;
+	uint32_t cmd[2];
+
+	cmd[0] = 0xf0220000|(12<<8);
+	cmd[1] = 0;
+
+	ret = __trans_cmd_send_then_recv(yunsdr->transport, (void *)cmd, sizeof(cmd));
+	if(ret < 0)
+		*en_dis = 0;
+	else
+		*en_dis = cmd[1];
+
+	return ret;
 }
 
 /* Get current receive RF gain for the selected channel. */
@@ -937,7 +1326,7 @@ int32_t yunsdr_enable_rx(YUNSDR_DESCRIPTOR *yunsdr,
 	}
 
 	rf_port &= 0x3;
-	if(nsamples*(rf_port == 3?8:4) > MAX_TX_BUFFSIZE)
+	if(nsamples*(rf_port == 3?8:4) > MAX_RX_BUFFSIZE)
 		return -1;
 	if(timestamp > 0 && mode == START_RX_BURST)
 		yunsdr->rx_meta->head = (rf_port<<16) | (1<<19) | IDENTIFIER_CODE | (START_RX_BURST << 24);
@@ -995,7 +1384,7 @@ int32_t yunsdr_read_samples(YUNSDR_DESCRIPTOR *yunsdr,
 #else
 				debug(DEBUG_ERR, "recv data error %s!\n", strerror(errno));
 #endif
-				break;
+				return -ETIMEDOUT;
 			}
 			count += ret;
 		} while(count != nbyte_per_frame);
