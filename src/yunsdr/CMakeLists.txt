@@ -5,10 +5,25 @@ INCLUDE_DIRECTORIES("${PROJECT_SOURCE_DIR}/src/yunsdr/include")
 ADD_LIBRARY(yunsdr SHARED ${YUNSDR_src})
 ADD_LIBRARY(yunsdr_static STATIC ${YUNSDR_src})
 SET_TARGET_PROPERTIES(yunsdr_static PROPERTIES OUTPUT_NAME "yunsdr")
+if(MSVC OR MINGW)
+	add_definitions(-D_WINSOCK_DEPRECATED_NO_WARNINGS)
+	add_definitions(-D_CRT_SECURE_NO_WARNINGS)
+	target_link_libraries(yunsdr ws2_32)
+	target_link_libraries(yunsdr_static ws2_32)
+	set(CMAKE_STATIC_LIBRARY_PREFIX "lib")
+	set(CMAKE_SHARED_LIBRARY_PREFIX "lib")
+	INSTALL(TARGETS yunsdr yunsdr_static
+		RUNTIME DESTINATION ${CMAKE_INSTALL_PREFIX}/lib
+		LIBRARY DESTINATION ${CMAKE_INSTALL_PREFIX}/lib
+		ARCHIVE DESTINATION ${CMAKE_INSTALL_PREFIX}/lib)
 
-INSTALL(TARGETS yunsdr yunsdr_static
-	LIBRARY DESTINATION /usr/local/lib
-	ARCHIVE DESTINATION /usr/local/lib)
+	INSTALL(FILES ${PROJECT_SOURCE_DIR}/src/yunsdr/include/yunsdr_api.h 
+		DESTINATION ${CMAKE_INSTALL_PREFIX}/include)
+else(MSVC OR MINGW)
+	INSTALL(TARGETS yunsdr yunsdr_static
+		LIBRARY DESTINATION /usr/local/lib
+		ARCHIVE DESTINATION /usr/local/lib)
 
-INSTALL(FILES ${PROJECT_SOURCE_DIR}/src/yunsdr/include/yunsdr_api.h 
-	DESTINATION /usr/local/include)
+	INSTALL(FILES ${PROJECT_SOURCE_DIR}/src/yunsdr/include/yunsdr_api.h 
+		DESTINATION /usr/local/include)
+endif(MSVC OR MINGW)

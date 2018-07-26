@@ -3,8 +3,8 @@ exec_prefix=${prefix}
 libdir=${exec_prefix}/lib
 includedir=${prefix}/include
 
-Name: libyunsdr
-Description: API for the YunSDR(Ethernet) devices
+Name: libyunsdr_ss
+Description: API for the YunSDR(PCIE/10Gigabit) devices
 Version: 1.0
-Libs: -L${libdir} -lyunsdr
+Libs: -L${libdir} -lyunsdr_ss
 Cflags: -I${includedir}
