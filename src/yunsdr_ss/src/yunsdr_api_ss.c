@@ -46,7 +46,7 @@ uint64_t yunsdr_timeNsToTicks(const uint64_t timeNs, const double rate)
 }
 
 
-YUNSDR_DESCRIPTOR *yunsdr_open_device(char *url)
+YUNSDR_DESCRIPTOR *yunsdr_open_device(const char *url)
 {
 	int ret;
 	YUNSDR_DESCRIPTOR *yunsdr;
@@ -77,9 +77,10 @@ YUNSDR_DESCRIPTOR *yunsdr_open_device(char *url)
 
 	char *prefix = strtok(string, ":");
 	if (!strcmp(prefix, "pcie")) {
+        static int devid = 0;
 		printf("Using pcie interface.\n");
 		yunsdr->trans->type = INTERFACE_PCIE;
-		int devid = atoi(strtok(NULL, ":"));
+		devid = atoi(strtok(NULL, ":"));
 		yunsdr->trans->app_opaque = &devid;
 	}
 	else if (!strcmp(prefix, "sfp")) {

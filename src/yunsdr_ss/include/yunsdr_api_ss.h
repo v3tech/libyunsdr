@@ -76,7 +76,7 @@ DLLEXPORT uint64_t yunsdr_ticksToTimeNs(const uint64_t ticks, const double rate)
 DLLEXPORT uint64_t yunsdr_timeNsToTicks(const uint64_t timeNs, const double rate);
 
 /***************************************************************************/
-DLLEXPORT YUNSDR_DESCRIPTOR *yunsdr_open_device(char *url);
+DLLEXPORT YUNSDR_DESCRIPTOR *yunsdr_open_device(const char *url);
 DLLEXPORT int32_t yunsdr_close_device(YUNSDR_DESCRIPTOR *yunsdr);
 
 
