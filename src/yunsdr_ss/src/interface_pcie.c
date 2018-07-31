@@ -153,7 +153,7 @@ int32_t pcie_stream_send(YUNSDR_TRANSPORT *trans, void *buf, uint32_t count, uin
 	int32_t sum = count * 4 + sizeof(YUNSDR_META);
 	do {
 		nbytes = MIN(MAX_TX_BULK_SIZE, sum);
-		remain = nbytes - sum;
+		remain = sum - nbytes;
 		ret = fpga_send(handle->fpga, channel, samples, nbytes / 4, 0, 1, 25000);
 		if (ret < 0) {
 			printf("%s failed\n", __func__);
@@ -190,7 +190,7 @@ int32_t pcie_stream_send2(YUNSDR_TRANSPORT *trans, void *buf, uint32_t count, ui
 	int32_t sum = count * 4 + sizeof(YUNSDR_META);
 	do {
 		nbytes = MIN(MAX_TX_BULK_SIZE, sum);
-		remain = nbytes - sum;
+		remain = sum - nbytes;
 		ret = fpga_send(handle->fpga, channel, samples, nbytes / 4, 0, 1, 25000);
 		if (ret < 0) {
 			printf("%s failed\n", __func__);
