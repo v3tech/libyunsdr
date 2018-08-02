@@ -40,14 +40,6 @@ if(MSVC)
 	set(CMAKE_INSTALL_PREFIX ${CMAKE_CURRENT_BINARY_DIR}/install)
 endif(MSVC)
 
-if(ENABLE_ETHERNET)
-	ADD_SUBDIRECTORY(src/yunsdr)
-endif(ENABLE_ETHERNET)
-
-if(ENABLE_PCIE OR ENABLE_SFP)
-	ADD_SUBDIRECTORY(src/yunsdr_ss)
-endif(ENABLE_PCIE OR ENABLE_SFP)
-
 if(CMAKE_C_COMPILER_ID MATCHES "GNU" OR CMAKE_C_COMPILER_ID MATCHES "Clang")
 	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -march=${GCC_ARCH} -Wall -Wno-comment -Wno-write-strings -Winline -Wno-unused-result -Wformat -Wmissing-field-initializers -Wtype-limits -std=c99 -D_GNU_SOURCE")
 
@@ -97,6 +89,14 @@ if(CMAKE_C_COMPILER_ID MATCHES "GNU" OR CMAKE_C_COMPILER_ID MATCHES "Clang")
 	endif(NOT HAVE_SSE)
 
 endif(CMAKE_C_COMPILER_ID MATCHES "GNU" OR CMAKE_C_COMPILER_ID MATCHES "Clang")
+
+if(ENABLE_ETHERNET)
+	ADD_SUBDIRECTORY(src/yunsdr)
+endif(ENABLE_ETHERNET)
+
+if(ENABLE_PCIE OR ENABLE_SFP)
+	ADD_SUBDIRECTORY(src/yunsdr_ss)
+endif(ENABLE_PCIE OR ENABLE_SFP)
 
 ##############################
 # MS Visual Studio
