@@ -7,6 +7,7 @@
 #include "interface_pcie.h"
 #include "transport.h"
 #include "debug.h"
+#include "spinlock.h"
 
 int32_t pcie_cmd_send(YUNSDR_TRANSPORT *trans, uint8_t rf_id, uint8_t cmd_id, void *buf, uint32_t len)
 {
@@ -40,6 +41,7 @@ int32_t pcie_cmd_send(YUNSDR_TRANSPORT *trans, uint8_t rf_id, uint8_t cmd_id, vo
 	pcie_cmd.cmd_l = (uint32_t)parameter;
 	pcie_cmd.cmd_h = parameter >> 32;
 
+    lock();
 	ret = fpga_send(handle->fpga, 0, &pcie_cmd, sizeof(YUNSDR_CMD) / 4, 0, 1, 25000);
 	if (ret < 0) {
 		printf("%s failed\n", __func__);
@@ -51,7 +53,7 @@ int32_t pcie_cmd_send(YUNSDR_TRANSPORT *trans, uint8_t rf_id, uint8_t cmd_id, vo
 		printf("%s failed\n", __func__);
 		return ret;
 	}
-
+    unlock();
 	return 0;
 }
 
@@ -69,6 +71,7 @@ int32_t pcie_cmd_send_then_recv(YUNSDR_TRANSPORT *trans, uint8_t rf_id, uint8_t 
 	pcie_cmd.cmd_l = 0;
 	pcie_cmd.cmd_h = 0;
 
+    lock();
 	ret = fpga_send(handle->fpga, 0, &pcie_cmd, sizeof(YUNSDR_CMD) / 4, 0, 1, 25000);
 	if (ret < 0) {
 		printf("%s failed\n", __func__);
@@ -81,6 +84,7 @@ int32_t pcie_cmd_send_then_recv(YUNSDR_TRANSPORT *trans, uint8_t rf_id, uint8_t 
 		printf("%s failed\n", __func__);
 		return ret;
 	}
+    unlock();
 
 	switch (len)
 	{
@@ -115,6 +119,7 @@ int32_t pcie_stream_recv(YUNSDR_TRANSPORT *trans, void *buf, uint32_t count, uin
 	pcie_cmd.rxtime_l = (uint32_t)*timestamp;
 	pcie_cmd.rxtime_h = *timestamp >> 32;
 
+    lock();
 	ret = fpga_send(handle->fpga, 0, &pcie_cmd, sizeof(YUNSDR_READ_REQ) / 4, 0, 1, 25000);
 	if (ret < 0) {
 		printf("%s failed\n", __func__);
@@ -127,6 +132,7 @@ int32_t pcie_stream_recv(YUNSDR_TRANSPORT *trans, void *buf, uint32_t count, uin
 		ret = -EIO;
 		return ret;
 	}
+    unlock();
 
 	*timestamp = ((uint64_t)rx_meta->timestamp_h) << 32 | rx_meta->timestamp_l;
 	memcpy(buf, (unsigned char *)rx_meta->payload, count * 4);
@@ -245,13 +251,15 @@ int32_t init_interface_pcie(YUNSDR_TRANSPORT *trans)
 	trans->stream_send = pcie_stream_send;
 	trans->stream_send2 = pcie_stream_send2;
 
+    spinlock_init();
+
 	return 0;
 }
 
 int32_t deinit_interface_pcie(YUNSDR_TRANSPORT *trans)
 {
 	PCIE_HANDLE *handle = (PCIE_HANDLE *)trans->opaque;
-
+    spinlock_deinit();
 	if (handle->fpga != NULL) {
 		fpga_close(handle->fpga);
 		return 0;

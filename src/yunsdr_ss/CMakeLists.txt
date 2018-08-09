@@ -4,7 +4,7 @@ SET(LIBRARY_OUTPUT_PATH "${PROJECT_BINARY_DIR}/lib")
 INCLUDE_DIRECTORIES("${PROJECT_SOURCE_DIR}/src/yunsdr_ss/include")
 
 SET(YUNSDR_SS_src "")
-list(APPEND YUNSDR_SS_src src/debug.c src/transport.c  src/yunsdr_api_ss.c)
+list(APPEND YUNSDR_SS_src src/debug.c src/spinlock.c src/transport.c  src/yunsdr_api_ss.c)
 
 
 ########################################################################
