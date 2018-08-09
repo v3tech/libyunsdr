@@ -994,6 +994,24 @@ int32_t yunsdr_dump_register (YUNSDR_DESCRIPTOR *yunsdr,
 	return ret;
 }
 
+/* yunsdr_get_version() version[31:0] x.y.z version[47:32] product model */
+int32_t yunsdr_get_version(YUNSDR_DESCRIPTOR *yunsdr, uint64_t *version)
+{
+	int ret;
+	uint32_t cmd[2];
+
+	cmd[0] = 0xF0CC0000;
+	cmd[1] = 0;
+
+	ret = __trans_cmd_send_then_recv(yunsdr->transport, (void *)cmd, sizeof(cmd));
+	if(ret < 0)
+		*version = -1;
+	else
+		*version = cmd[1] | ((uint64_t)cmd[0]&0xffff)<<32;
+
+	return ret;
+}
+
 int32_t yunsdr_set_trx_channel (YUNSDR_DESCRIPTOR *yunsdr, uint8_t ch)
 {
 	uint32_t cmd[2];
@@ -1436,6 +1454,23 @@ int32_t yunsdr_write_samples(YUNSDR_DESCRIPTOR *yunsdr,
 	}
 
 	return ncopy;
+}
+int32_t yunsdr_read_samples2(YUNSDR_DESCRIPTOR *yunsdr,
+		void *buffer,
+		uint32_t nbyte,
+		uint64_t *timestamp,
+		double timeout)
+{
+	return yunsdr_read_samples(yunsdr, &buffer, nbyte, timestamp, timeout);
+}
+
+int32_t yunsdr_write_samples2(YUNSDR_DESCRIPTOR *yunsdr,
+		void *buffer,
+		uint32_t nbyte,
+		RF_CHANNEL  rf_port,
+		uint64_t timestamp)
+{
+	return yunsdr_write_samples(yunsdr, &buffer, nbyte, rf_port, timestamp);
 }
 #endif
 

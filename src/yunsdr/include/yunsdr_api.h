@@ -158,6 +158,8 @@ DLLEXPORT int32_t yunsdr_set_trx_fir_config(YUNSDR_DESCRIPTOR *yunsdr, char *fir
 /* Sets the TRX FIR state. */
 DLLEXPORT int32_t yunsdr_set_trx_fir_en_dis(YUNSDR_DESCRIPTOR *yunsdr, uint8_t en_dis);
 
+DLLEXPORT int32_t yunsdr_get_version(YUNSDR_DESCRIPTOR *yunsdr, uint64_t *version);
+
 /* Dump current value of yunsdr's register. */
 DLLEXPORT int32_t yunsdr_dump_register (YUNSDR_DESCRIPTOR *yunsdr,
 		uint16_t regid, uint32_t *reg_val);
@@ -254,6 +256,18 @@ DLLEXPORT int32_t yunsdr_read_samples(YUNSDR_DESCRIPTOR *yunsdr,
 
 DLLEXPORT int32_t yunsdr_write_samples(YUNSDR_DESCRIPTOR *yunsdr,
 		void **buffer,
+		uint32_t nbyte,
+		RF_CHANNEL  rf_port,
+		uint64_t timestamp);
+
+DLLEXPORT int32_t yunsdr_read_samples2(YUNSDR_DESCRIPTOR *yunsdr,
+		void *buffer,
+		uint32_t nbyte,
+		uint64_t *timestamp,
+		double timeout);
+
+DLLEXPORT int32_t yunsdr_write_samples2(YUNSDR_DESCRIPTOR *yunsdr,
+		void *buffer,
 		uint32_t nbyte,
 		RF_CHANNEL  rf_port,
 		uint64_t timestamp);
