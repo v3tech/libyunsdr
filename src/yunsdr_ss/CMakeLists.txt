@@ -64,7 +64,8 @@ if(MSVC OR MINGW)
 		DESTINATION ${CMAKE_INSTALL_PREFIX}/include)
 
 else(MSVC OR MINGW)
-
+	target_link_libraries(yunsdr_ss pthread)
+	target_link_libraries(yunsdr_ss_static pthread)
 	INSTALL(TARGETS yunsdr_ss yunsdr_ss_static
 		LIBRARY DESTINATION /usr/local/lib
 		ARCHIVE DESTINATION /usr/local/lib)
