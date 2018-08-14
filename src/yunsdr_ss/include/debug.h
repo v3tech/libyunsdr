@@ -15,4 +15,11 @@ enum {
 void debug(int level, const char *fmt, ...);
 #endif
 
+#if defined(__WINDOWS_) || defined(_WIN32)
+#if (_MSC_VER <= 1900)
+#define __func__ __FUNCTION__
+#define inline __inline
+#endif
+#endif
+
 #endif
