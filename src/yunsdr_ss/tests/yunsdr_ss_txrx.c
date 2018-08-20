@@ -2,11 +2,19 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#if defined(__WINDOWS_) || defined(_WIN32)
+#include "wingetopt.h"
+#include <windows.h>
+#else
 #include <unistd.h>
+#endif
 #include <math.h>
 #include <time.h>
 #include <yunsdr_api_ss.h>
 
+#if defined(__WINDOWS_) || defined(_WIN32)
+#define M_PI 3.141592654L
+#endif
 #define AM 8192
 
 typedef struct iq
@@ -142,7 +150,7 @@ int main(int argc, char **argv) {
         perror("malloc");
         exit(-1);
     }
-    bzero(tx_buffer, sizeof(iq_t)*(flen+time_adv_samples));
+    memset(tx_buffer, 0, sizeof(iq_t)*(flen+time_adv_samples));
 
     iq_t *zeros = calloc(sizeof(iq_t), flen);
     if (!zeros) {
@@ -185,7 +193,11 @@ int main(int argc, char **argv) {
     printf("Set TX gain:    %.1f dB\n", rf_tx_gain);
     printf("Set TX/RX freq: %.2f MHz\n",rf_freq / 1000000);
 
+#if defined(__WINDOWS_) || defined(_WIN32)
+    Sleep(1000);
+#else
     sleep(1);
+#endif
 
     if (input_filename) {
         load_file(input_filename, &tx_buffer[time_adv_samples], flen*sizeof(iq_t));

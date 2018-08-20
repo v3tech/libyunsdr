@@ -437,6 +437,7 @@ int32_t yunsdr_write_samples2(YUNSDR_DESCRIPTOR *yunsdr,
 /* Note: src and dst must be 16 byte aligned */
 void float_to_int16(int16_t *dst, const float *src, int n, float mult)
 {
+#ifdef __GNUC__
 	const __m128 *p;
 	__m128i *q, a0, a1;
 	__m128 mult1;
@@ -474,10 +475,12 @@ void float_to_int16(int16_t *dst, const float *src, int n, float mult)
 			n--;
 		} while (n != 0);
 	}
+#endif
 }
 /* Note: src and dst must be 16 byte aligned */
 void int16_to_float(float *dst, const int16_t *src, int len, float mult)
 {
+#ifdef __GNUC__
 	__m128i a0, a1, a, b, sign;
 	__m128 mult1;
 
@@ -500,14 +503,21 @@ void int16_to_float(float *dst, const int16_t *src, int len, float mult)
 		src++;
 		len--;
 	}
+#endif
 }
 #else
 void float_to_int16(int16_t *dst, const float *src, int n, float mult)
 {
-#warning "float_to_int16 is not copmiled!"
+#if defined(__WINDOWS_) || defined(_WIN32)
+#else
+    #warning "float_to_int16 is not copmiled!"
+#endif
 }
 void int16_to_float(float *dst, const int16_t *src, int len, float mult)
 {
-#warning "float_to_int16 is not copmiled!"
+#if defined(__WINDOWS_) || defined(_WIN32)
+#else
+    #warning "float_to_int16 is not copmiled!"
+#endif
 }
 #endif

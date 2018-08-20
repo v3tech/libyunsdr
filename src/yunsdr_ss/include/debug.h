@@ -21,5 +21,5 @@ void debug(int level, const char *fmt, ...);
 #define inline __inline
 #endif
 #endif
-
+#define UNUSED(VAR) {VAR++;VAR--;}
 #endif

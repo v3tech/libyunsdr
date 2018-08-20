@@ -90,14 +90,6 @@ if(CMAKE_C_COMPILER_ID MATCHES "GNU" OR CMAKE_C_COMPILER_ID MATCHES "Clang")
 
 endif(CMAKE_C_COMPILER_ID MATCHES "GNU" OR CMAKE_C_COMPILER_ID MATCHES "Clang")
 
-if(ENABLE_ETHERNET)
-	ADD_SUBDIRECTORY(src/yunsdr)
-endif(ENABLE_ETHERNET)
-
-if(ENABLE_PCIE OR ENABLE_SFP)
-	ADD_SUBDIRECTORY(src/yunsdr_ss)
-endif(ENABLE_PCIE OR ENABLE_SFP)
-
 ##############################
 # MS Visual Studio
 ###############################
@@ -133,6 +125,14 @@ if(MSVC)
 	endif(NOT HAVE_SSE)
 
 endif(MSVC)
+
+if(ENABLE_ETHERNET)
+	ADD_SUBDIRECTORY(src/yunsdr)
+endif(ENABLE_ETHERNET)
+
+if(ENABLE_PCIE OR ENABLE_SFP)
+	ADD_SUBDIRECTORY(src/yunsdr_ss)
+endif(ENABLE_PCIE OR ENABLE_SFP)
 
 message(STATUS "CMAKE_C_FLAGS is ${CMAKE_C_FLAGS}")
 ########################################################################
