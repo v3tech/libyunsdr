@@ -421,6 +421,12 @@ int32_t yunsdr_read_samples(YUNSDR_DESCRIPTOR *yunsdr,
 	return  yunsdr->trans->stream_recv(yunsdr->trans, buffer, count, channel, timestamp);
 }
 
+int32_t yunsdr_read_samples_zerocopy(YUNSDR_DESCRIPTOR *yunsdr,
+	void *buffer, uint32_t count, RF_RX_CHANNEL channel, uint64_t *timestamp)
+{
+	return  yunsdr->trans->stream_recv2(yunsdr->trans, buffer, count, channel, timestamp);
+}
+
 int32_t yunsdr_write_samples(YUNSDR_DESCRIPTOR *yunsdr,
 	void *buffer, uint32_t count, RF_TX_CHANNEL channel, uint64_t timestamp)
 {

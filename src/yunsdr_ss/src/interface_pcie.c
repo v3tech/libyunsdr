@@ -139,6 +139,39 @@ int32_t pcie_stream_recv(YUNSDR_TRANSPORT *trans, void *buf, uint32_t count, uin
 
 	return count;
 }
+
+int32_t pcie_stream_recv2(YUNSDR_TRANSPORT *trans, void *buf, uint32_t count, uint8_t channel, uint64_t *timestamp)
+{
+	int ret;
+	PCIE_HANDLE *handle = (PCIE_HANDLE *)trans->opaque;
+	YUNSDR_READ_REQ pcie_cmd;
+
+	pcie_cmd.head = 0xcafefee0 | channel;
+	pcie_cmd.rxlength = count + sizeof(YUNSDR_READ_REQ) / 4;
+	pcie_cmd.rxtime_l = (uint32_t)*timestamp;
+	pcie_cmd.rxtime_h = *timestamp >> 32;
+
+    lock();
+	ret = fpga_send(handle->fpga, 0, &pcie_cmd, sizeof(YUNSDR_READ_REQ) / 4, 0, 1, 25000);
+	if (ret < 0) {
+		printf("%s failed\n", __func__);
+		return ret;
+	}
+
+	ret = fpga_recv(handle->fpga, channel, buf, pcie_cmd.rxlength, 25000);
+	if (ret < 0) {
+		printf("%s failed\n", __func__);
+		ret = -EIO;
+		return ret;
+	}
+    unlock();
+
+	YUNSDR_META *rx_meta = (YUNSDR_META *)buf;
+	*timestamp = ((uint64_t)rx_meta->timestamp_h) << 32 | rx_meta->timestamp_l;
+
+	return count;
+}
+
 int32_t pcie_stream_send(YUNSDR_TRANSPORT *trans, void *buf, uint32_t count, uint8_t channel, uint64_t timestamp)
 {
 	int ret;
@@ -248,6 +281,7 @@ int32_t init_interface_pcie(YUNSDR_TRANSPORT *trans)
 	trans->cmd_send = pcie_cmd_send;
 	trans->cmd_send_then_recv = pcie_cmd_send_then_recv;
 	trans->stream_recv = pcie_stream_recv;
+	trans->stream_recv2 = pcie_stream_recv2;
 	trans->stream_send = pcie_stream_send;
 	trans->stream_send2 = pcie_stream_send2;
 

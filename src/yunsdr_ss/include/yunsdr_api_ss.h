@@ -206,7 +206,12 @@ DLLEXPORT int32_t yunsdr_read_timestamp(YUNSDR_DESCRIPTOR *yunsdr, uint8_t rf_id
 /***************************************************************************/
 DLLEXPORT int32_t yunsdr_read_samples(YUNSDR_DESCRIPTOR *yunsdr,
         void *buffer, uint32_t count, RF_RX_CHANNEL channel, uint64_t *timestamp);
-        
+
+/* Since the data contains a 16-byte header, the size of the buffer should be
+ * greater than or equal to (count*4+16) Bytes*/
+DLLEXPORT int32_t yunsdr_read_samples_zerocopy(YUNSDR_DESCRIPTOR *yunsdr,
+        void *buffer, uint32_t count, RF_RX_CHANNEL channel, uint64_t *timestamp);
+
 DLLEXPORT int32_t yunsdr_write_samples(YUNSDR_DESCRIPTOR *yunsdr,
         void *buffer, uint32_t count, RF_TX_CHANNEL channel, uint64_t timestamp);
 

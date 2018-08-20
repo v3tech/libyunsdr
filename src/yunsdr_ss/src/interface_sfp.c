@@ -293,6 +293,62 @@ retry:		ret = recvfrom(handle->sockfd[channel - 1], buf_ptr, remain, 0,
 
 }
 
+int32_t sfp_stream_recv2(YUNSDR_TRANSPORT *trans, void *buf, uint32_t count, uint8_t channel, uint64_t *timestamp)
+{
+	int ret;
+	SFP_HANDLE *handle = (SFP_HANDLE *)trans->opaque;
+	YUNSDR_READ_REQ pcie_req;
+
+	pcie_req.head = 0xcafefee0 | channel;
+	pcie_req.rxlength = count + sizeof(YUNSDR_READ_REQ) / 4;
+	pcie_req.rxtime_l = (uint32_t)*timestamp;
+	pcie_req.rxtime_h = *timestamp >> 32;
+
+	ret = sendto(handle->cmd_sock, (char *)&pcie_req, sizeof(YUNSDR_READ_REQ), 0,
+		(struct sockaddr *)&handle->cmd_addr, sizeof(handle->cmd_addr));
+	if (ret < 0) {
+		printf("%s failed\n", __func__);
+		return -1;
+	}
+#if defined(__GNUC__)
+	socklen_t addr_len = sizeof(struct sockaddr_in);
+#else
+	int addr_len = sizeof(struct sockaddr_in);
+#endif
+
+    char *buf_ptr = (char *)buf;
+    uint32_t all_bytes = count * 4 + sizeof(YUNSDR_META);
+    uint32_t remain = 0;
+	uint32_t nrecv = 0;
+
+	if (wait_for_recv_ready(handle->sockfd[channel - 1], 10)) {
+		do {
+            remain = all_bytes - nrecv;
+retry:		ret = recvfrom(handle->sockfd[channel - 1], buf_ptr, remain, 0, 
+                    (struct sockaddr *)&handle->stream_addr[channel - 1], &addr_len);
+			if (ret < 0) {
+				if (errno == EINTR)
+					goto retry;
+#if defined(__WINDOWS_) || defined(_WIN32)
+				printf("recv data error %d!\n", GetLastError());
+#else
+				printf("recv data error %s!\n", strerror(errno));
+#endif
+				return -ETIMEDOUT;
+			}
+			nrecv += ret;
+            buf_ptr += ret;
+		} while (all_bytes != nrecv);
+	    YUNSDR_META *rx_meta = (YUNSDR_META *)buf;
+		*timestamp = (uint64_t)rx_meta->timestamp_h << 32 | rx_meta->timestamp_l;
+	}
+	else {
+		count = -1;
+	}
+	return count;
+
+}
+
 int32_t sfp_stream_send(YUNSDR_TRANSPORT *trans, void *buf, uint32_t count, uint8_t channel, uint64_t timestamp)
 {
 	int ret;
@@ -391,6 +447,7 @@ int32_t init_interface_sfp(YUNSDR_TRANSPORT *trans)
 	trans->cmd_send = sfp_cmd_send;
 	trans->cmd_send_then_recv = sfp_cmd_send_then_recv;
 	trans->stream_recv = sfp_stream_recv;
+	trans->stream_recv2 = sfp_stream_recv2;
 	trans->stream_send = sfp_stream_send;
 	trans->stream_send2 = sfp_stream_send2;
 
