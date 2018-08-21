@@ -126,21 +126,21 @@ int32_t yunsdr_close_device(YUNSDR_DESCRIPTOR *yunsdr)
 int32_t yunsdr_get_tx_lo_freq(YUNSDR_DESCRIPTOR *yunsdr, uint8_t rf_id,
 	uint64_t *lo_freq_hz)
 {
-	return yunsdr->trans->cmd_send_then_recv(yunsdr->trans, rf_id, 2, lo_freq_hz, sizeof(uint64_t));
+	return yunsdr->trans->cmd_send_then_recv(yunsdr->trans, rf_id, 2, lo_freq_hz, sizeof(uint64_t), 0);
 }
 
 /* Get current TX sampling frequency. */
 int32_t yunsdr_get_tx_sampling_freq(YUNSDR_DESCRIPTOR *yunsdr, uint8_t rf_id,
 	uint32_t *sampling_freq_hz)
 {
-	return yunsdr->trans->cmd_send_then_recv(yunsdr->trans, rf_id, 3, sampling_freq_hz, sizeof(uint32_t));
+	return yunsdr->trans->cmd_send_then_recv(yunsdr->trans, rf_id, 3, sampling_freq_hz, sizeof(uint32_t), 0);
 }
 
 /* Get the TX RF bandwidth. */
 int32_t yunsdr_get_tx_rf_bandwidth(YUNSDR_DESCRIPTOR *yunsdr, uint8_t rf_id,
 	uint32_t *bandwidth_hz)
 {
-	return yunsdr->trans->cmd_send_then_recv(yunsdr->trans, rf_id, 4, bandwidth_hz, sizeof(uint32_t));
+	return yunsdr->trans->cmd_send_then_recv(yunsdr->trans, rf_id, 4, bandwidth_hz, sizeof(uint32_t), 0);
 }
 
 /* Get current transmit attenuation for the selected channel. */
@@ -148,7 +148,7 @@ int32_t yunsdr_get_tx1_attenuation(YUNSDR_DESCRIPTOR *yunsdr, uint8_t rf_id,
 	uint32_t *attenuation_mdb)
 {
 
-	return yunsdr->trans->cmd_send_then_recv(yunsdr->trans, rf_id, 5, attenuation_mdb, sizeof(uint32_t));
+	return yunsdr->trans->cmd_send_then_recv(yunsdr->trans, rf_id, 5, attenuation_mdb, sizeof(uint32_t), 0);
 }
 
 /* Get current transmit attenuation for the selected channel. */
@@ -156,7 +156,7 @@ int32_t yunsdr_get_tx2_attenuation(YUNSDR_DESCRIPTOR *yunsdr, uint8_t rf_id,
 	uint32_t *attenuation_mdb)
 {
 
-	return yunsdr->trans->cmd_send_then_recv(yunsdr->trans, rf_id, 6, attenuation_mdb, sizeof(uint32_t));
+	return yunsdr->trans->cmd_send_then_recv(yunsdr->trans, rf_id, 6, attenuation_mdb, sizeof(uint32_t), 0);
 }
 
 /* Get current RX LO frequency. */
@@ -164,7 +164,7 @@ int32_t yunsdr_get_rx_lo_freq(YUNSDR_DESCRIPTOR *yunsdr, uint8_t rf_id,
 	uint64_t *lo_freq_hz)
 {
 
-	return yunsdr->trans->cmd_send_then_recv(yunsdr->trans, rf_id, 8, lo_freq_hz, sizeof(uint64_t));
+	return yunsdr->trans->cmd_send_then_recv(yunsdr->trans, rf_id, 8, lo_freq_hz, sizeof(uint64_t), 0);
 }
 
 /* Get the RX RF bandwidth. */
@@ -172,7 +172,7 @@ int32_t yunsdr_get_rx_rf_bandwidth(YUNSDR_DESCRIPTOR *yunsdr, uint8_t rf_id,
 	uint32_t *bandwidth_hz)
 {
 
-	return yunsdr->trans->cmd_send_then_recv(yunsdr->trans, rf_id, 9, bandwidth_hz, sizeof(uint32_t));
+	return yunsdr->trans->cmd_send_then_recv(yunsdr->trans, rf_id, 9, bandwidth_hz, sizeof(uint32_t), 0);
 }
 
 /* Get the gain control mode for the selected channel. */
@@ -180,14 +180,14 @@ int32_t yunsdr_get_rx1_gain_control_mode(YUNSDR_DESCRIPTOR *yunsdr, uint8_t rf_i
 	RF_GAIN_CTRL_MODE *gc_mode)
 {
 
-	return yunsdr->trans->cmd_send_then_recv(yunsdr->trans, rf_id, 10, gc_mode, sizeof(uint8_t));
+	return yunsdr->trans->cmd_send_then_recv(yunsdr->trans, rf_id, 10, gc_mode, sizeof(uint8_t), 0);
 }
 
 /* Get the gain control mode for the selected channel. */
 int32_t yunsdr_get_rx2_gain_control_mode(YUNSDR_DESCRIPTOR *yunsdr, uint8_t rf_id,
 	RF_GAIN_CTRL_MODE *gc_mode)
 {
-	return yunsdr->trans->cmd_send_then_recv(yunsdr->trans, rf_id, 11, gc_mode, sizeof(uint8_t));
+	return yunsdr->trans->cmd_send_then_recv(yunsdr->trans, rf_id, 11, gc_mode, sizeof(uint8_t), 0);
 }
 
 /* Get current receive RF gain for the selected channel. */
@@ -195,14 +195,14 @@ int32_t yunsdr_get_rx1_rf_gain(YUNSDR_DESCRIPTOR *yunsdr, uint8_t rf_id,
 	int32_t *gain_db)
 {
 
-	return yunsdr->trans->cmd_send_then_recv(yunsdr->trans, rf_id, 12, gain_db, sizeof(uint32_t));
+	return yunsdr->trans->cmd_send_then_recv(yunsdr->trans, rf_id, 12, gain_db, sizeof(uint32_t), 0);
 }
 
 /* Get current receive RF gain for the selected channel. */
 int32_t yunsdr_get_rx2_rf_gain(YUNSDR_DESCRIPTOR *yunsdr, uint8_t rf_id,
 	int32_t *gain_db)
 {
-	return  yunsdr->trans->cmd_send_then_recv(yunsdr->trans, rf_id, 13, gain_db, sizeof(uint32_t));
+	return  yunsdr->trans->cmd_send_then_recv(yunsdr->trans, rf_id, 13, gain_db, sizeof(uint32_t), 0);
 }
 
 
@@ -307,14 +307,22 @@ int32_t yunsdr_set_tx_fir_en_dis(YUNSDR_DESCRIPTOR *yunsdr, uint8_t rf_id,
 int32_t yunsdr_get_ad9361_reg(YUNSDR_DESCRIPTOR *yunsdr, uint8_t rf_id, uint32_t reg,
 	uint32_t *value)
 {
-	return yunsdr->trans->cmd_send(yunsdr->trans, rf_id, 1, &value, sizeof(uint32_t));
+    int ret;
+
+	ret = yunsdr->trans->cmd_send_then_recv(yunsdr->trans, rf_id, 1, &reg, sizeof(uint32_t), 1);
+    if(ret)
+        *value = 0xFFFFFFFF;
+    else
+        *value = reg;
+
+    return ret;
 }
 
 int32_t yunsdr_set_ad9361_reg(YUNSDR_DESCRIPTOR *yunsdr, uint8_t rf_id, uint32_t reg,
 	uint32_t value)
 {
-
-	return yunsdr->trans->cmd_send(yunsdr->trans, rf_id, 1, &value, sizeof(uint32_t));
+    uint64_t parameter = (uint64_t)value<<32 | reg;
+	return yunsdr->trans->cmd_send(yunsdr->trans, rf_id, 1, &parameter, sizeof(uint64_t));
 }
 
 int32_t yunsdr_set_tx_lo_int_ext(YUNSDR_DESCRIPTOR *yunsdr, uint8_t rf_id,
@@ -388,9 +396,9 @@ int32_t yunsdr_get_firmware_version(YUNSDR_DESCRIPTOR *yunsdr, uint32_t *version
 {
     uint32_t fpga_ver, arm_ver;
 
-	if(yunsdr->trans->cmd_send_then_recv(yunsdr->trans, 0, 100, &fpga_ver, sizeof(uint32_t)) < 0)
+	if(yunsdr->trans->cmd_send_then_recv(yunsdr->trans, 0, 100, &fpga_ver, sizeof(uint32_t), 0) < 0)
         return -1;
-	if(yunsdr->trans->cmd_send_then_recv(yunsdr->trans, 0, 101, &arm_ver, sizeof(uint32_t)) < 0)
+	if(yunsdr->trans->cmd_send_then_recv(yunsdr->trans, 0, 101, &arm_ver, sizeof(uint32_t), 0) < 0)
         return -1;
     *version = (fpga_ver&0xffff) | (arm_ver << 16);
 
@@ -398,7 +406,7 @@ int32_t yunsdr_get_firmware_version(YUNSDR_DESCRIPTOR *yunsdr, uint32_t *version
 }
 int32_t yunsdr_get_model_version(YUNSDR_DESCRIPTOR *yunsdr, uint32_t *version)
 {
-    return yunsdr->trans->cmd_send_then_recv(yunsdr->trans, 0, 102, version, sizeof(uint32_t));
+    return yunsdr->trans->cmd_send_then_recv(yunsdr->trans, 0, 102, version, sizeof(uint32_t), 0);
 }
 
 /* Get current RX sampling frequency. */
@@ -412,7 +420,7 @@ int32_t yunsdr_enable_timestamp(YUNSDR_DESCRIPTOR *yunsdr, uint8_t rf_id,
 int32_t yunsdr_read_timestamp(YUNSDR_DESCRIPTOR *yunsdr, uint8_t rf_id,
 	uint64_t *timestamp)
 {
-	return  yunsdr->trans->cmd_send_then_recv(yunsdr->trans, rf_id, 28, timestamp, sizeof(uint64_t));
+	return  yunsdr->trans->cmd_send_then_recv(yunsdr->trans, rf_id, 28, timestamp, sizeof(uint64_t), 0);
 }
 
 int32_t yunsdr_read_samples(YUNSDR_DESCRIPTOR *yunsdr,

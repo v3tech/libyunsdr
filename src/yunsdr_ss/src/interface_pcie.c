@@ -57,19 +57,42 @@ int32_t pcie_cmd_send(YUNSDR_TRANSPORT *trans, uint8_t rf_id, uint8_t cmd_id, vo
 	return 0;
 }
 
-int32_t pcie_cmd_send_then_recv(YUNSDR_TRANSPORT *trans, uint8_t rf_id, uint8_t cmd_id, void *buf, uint32_t len)
+int32_t pcie_cmd_send_then_recv(YUNSDR_TRANSPORT *trans, uint8_t rf_id, uint8_t cmd_id, void *buf, uint32_t len, uint8_t with_param)
 {
 	int ret = 0;
 	PCIE_HANDLE *handle = (PCIE_HANDLE *)trans->opaque;
 	YUNSDR_CMD pcie_cmd;
+    uint64_t parameter;
+	switch (len)
+	{
+	case 1:
+		parameter = *(uint8_t *)buf;
+		break;
+	case 2:
+		parameter = *(uint16_t *)buf;
+		break;
+	case 4:
+		parameter = *(uint32_t *)buf;
+		break;
+	case 8:
+		parameter = *(uint64_t *)buf;
+		break;
+	default:
+		return -EINVAL;
+	}
 
 	pcie_cmd.head = 0xdeadbeef;
 	pcie_cmd.reserve = 0;
 	pcie_cmd.rf_id = rf_id;
 	pcie_cmd.w_or_r = 0;
 	pcie_cmd.cmd_id = cmd_id;
-	pcie_cmd.cmd_l = 0;
-	pcie_cmd.cmd_h = 0;
+    if(with_param) {
+	    pcie_cmd.cmd_l = (uint32_t)parameter;
+	    pcie_cmd.cmd_h = parameter >> 32;
+    } else {
+    	pcie_cmd.cmd_l = 0;
+	    pcie_cmd.cmd_h = 0;
+    }
 
     lock();
 	ret = fpga_send(handle->fpga, 0, &pcie_cmd, sizeof(YUNSDR_CMD) / 4, 0, 1, 25000);

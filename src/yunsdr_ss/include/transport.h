@@ -48,7 +48,7 @@ struct yunsdr_transport {
 	YUNSDR_META *rx_meta;
 	INTERFACES type;
 	int32_t(*cmd_send)(YUNSDR_TRANSPORT *trans, uint8_t rf_id, uint8_t cmd_id, void *buf, uint32_t len);
-	int32_t (*cmd_send_then_recv)(YUNSDR_TRANSPORT *trans, uint8_t rf_id, uint8_t cmd_id, void *buf, uint32_t len);
+	int32_t (*cmd_send_then_recv)(YUNSDR_TRANSPORT *trans, uint8_t rf_id, uint8_t cmd_id, void *buf, uint32_t len, uint8_t with_param);
 
 	int32_t (*stream_recv)(YUNSDR_TRANSPORT *trans, void *buf, uint32_t count, uint8_t channel, uint64_t *timestamp);
     /* for zero copy, the data in buf contains a 16-byte header */
