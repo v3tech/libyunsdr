@@ -71,6 +71,15 @@ typedef enum trx_switch {
     TX,
 }TRX_SWITCH;
 
+typedef enum {
+    TX_CHANNEL_TIMEOUT   = 29,
+    RX_CHANNEL_TIMEOUT   = 30,
+    TX_CHANNEL_UNDERFLOW = 31,
+    RX_CHANNEL_OVERFLOW  = 32,
+    TX_CHANNEL_COUNT     = 33,
+    RX_CHANNEL_COUNT     = 34,
+}CHANNEL_EVENT;
+
 /***************************************************************************/
 DLLEXPORT uint64_t yunsdr_ticksToTimeNs(const uint64_t ticks, const double rate);
 DLLEXPORT uint64_t yunsdr_timeNsToTicks(const uint64_t timeNs, const double rate);
@@ -202,6 +211,7 @@ DLLEXPORT int32_t yunsdr_enable_timestamp(YUNSDR_DESCRIPTOR *yunsdr, uint8_t rf_
         uint8_t enbale);
 DLLEXPORT int32_t yunsdr_read_timestamp(YUNSDR_DESCRIPTOR *yunsdr, uint8_t rf_id, uint64_t *timestamp);
 
+DLLEXPORT int32_t yunsdr_get_channel_event(YUNSDR_DESCRIPTOR *yunsdr, CHANNEL_EVENT event, uint8_t channel, uint32_t *count);
 
 /***************************************************************************/
 DLLEXPORT int32_t yunsdr_read_samples(YUNSDR_DESCRIPTOR *yunsdr,

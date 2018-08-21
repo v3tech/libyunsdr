@@ -409,6 +409,10 @@ int32_t yunsdr_get_model_version(YUNSDR_DESCRIPTOR *yunsdr, uint32_t *version)
     return yunsdr->trans->cmd_send_then_recv(yunsdr->trans, 0, 102, version, sizeof(uint32_t), 0);
 }
 
+int32_t yunsdr_get_channel_event(YUNSDR_DESCRIPTOR *yunsdr, CHANNEL_EVENT event, uint8_t channel, uint32_t *count)
+{
+	return yunsdr->trans->cmd_send_then_recv(yunsdr->trans, channel, event, count, sizeof(uint32_t), 0);
+}
 /* Get current RX sampling frequency. */
 
 int32_t yunsdr_enable_timestamp(YUNSDR_DESCRIPTOR *yunsdr, uint8_t rf_id,
