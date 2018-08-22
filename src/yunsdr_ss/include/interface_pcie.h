@@ -9,8 +9,8 @@
 #include "transport.h"
 
 typedef struct interface_handle_pcie {
-	fpga_t *fpga;
-	int32_t id;
+    fpga_t *fpga;
+    int32_t id;
 }PCIE_HANDLE;
 
 

@@ -42,10 +42,10 @@
 
 
 typedef struct interface_handle_sfp {
-	SOCKET sockfd[MAX_RF_STREAM];
-	SOCKADDR_IN stream_addr[MAX_RF_STREAM];
-	SOCKET cmd_sock;
-	SOCKADDR_IN cmd_addr;
+    SOCKET sockfd[MAX_RF_STREAM];
+    SOCKADDR_IN stream_addr[MAX_RF_STREAM];
+    SOCKET cmd_sock;
+    SOCKADDR_IN cmd_addr;
 }SFP_HANDLE;
 
 
