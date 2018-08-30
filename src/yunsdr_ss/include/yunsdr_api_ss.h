@@ -10,8 +10,6 @@
 #include <stdint.h>
 #include <stdlib.h>
 
-#include <riffa.h>
-
 #if defined(__WINDOWS_) || defined(_WIN32)
 #define DLLEXPORT __declspec(dllexport)
 #define YUNSDRCALL __cdecl

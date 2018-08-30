@@ -2,8 +2,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "transport.h"
+#ifdef ENABLE_PCIE
 #include "interface_pcie.h"
+#endif
+#ifdef ENABLE_SFP
 #include "interface_sfp.h"
+#endif
 
 int32_t init_transport(YUNSDR_TRANSPORT *trans)
 {
