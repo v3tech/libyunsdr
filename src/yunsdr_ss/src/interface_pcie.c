@@ -277,10 +277,13 @@ int32_t init_interface_pcie(YUNSDR_TRANSPORT *trans)
     fpga_info_list info;
     if (fpga_list(&info) != 0) {
         printf("Error populating fpga_info_list\n");
-        //return -1;
-    }
-    else {
+        return -ENODEV;
+    } else {
         printf("Number of devices: %d\n", info.num_fpgas);
+        if(info.num_fpgas == 0) {
+            printf("Can't find any device!\n");
+            return -ENODEV;
+        }
         for (int i = 0; i < info.num_fpgas; i++) {
             printf("%d: id:%d\n", i, info.id[i]);
             printf("%d: num_chnls:%d\n", i, info.num_chnls[i]);
@@ -288,7 +291,10 @@ int32_t init_interface_pcie(YUNSDR_TRANSPORT *trans)
             printf("%d: vendor id:%04X\n", i, info.vendor_id[i]);
             printf("%d: device id:%04X\n", i, info.device_id[i]);
         }
-
+        if(handle->id > info.num_fpgas) {
+            printf("Can't find device %d!\n", handle->id);
+            return -EINVAL;
+        }
     }
     handle->fpga = fpga_open(handle->id);
 
