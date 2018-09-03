@@ -137,7 +137,7 @@ int32_t pcie_stream_recv(YUNSDR_TRANSPORT *trans, void *buf, uint32_t count, uin
     YUNSDR_META *rx_meta = trans->rx_meta;
     YUNSDR_READ_REQ pcie_cmd;
 
-    pcie_cmd.head = 0xcafefee0 | channel;
+    pcie_cmd.head = 0xcafefee0 | (1 << (channel - 1));
     pcie_cmd.rxlength = count + sizeof(YUNSDR_READ_REQ) / 4;
     pcie_cmd.rxtime_l = (uint32_t)*timestamp;
     pcie_cmd.rxtime_h = *timestamp >> 32;
@@ -169,7 +169,7 @@ int32_t pcie_stream_recv2(YUNSDR_TRANSPORT *trans, void *buf, uint32_t count, ui
     PCIE_HANDLE *handle = (PCIE_HANDLE *)trans->opaque;
     YUNSDR_READ_REQ pcie_cmd;
 
-    pcie_cmd.head = 0xcafefee0 | channel;
+    pcie_cmd.head = 0xcafefee0 | (1 << (channel - 1));
     pcie_cmd.rxlength = count + sizeof(YUNSDR_READ_REQ) / 4;
     pcie_cmd.rxtime_l = (uint32_t)*timestamp;
     pcie_cmd.rxtime_h = *timestamp >> 32;

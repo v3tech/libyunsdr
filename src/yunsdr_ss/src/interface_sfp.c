@@ -265,7 +265,7 @@ int32_t sfp_stream_recv(YUNSDR_TRANSPORT *trans, void *buf, uint32_t count, uint
     YUNSDR_META *rx_meta = trans->rx_meta;
     YUNSDR_READ_REQ pcie_req;
 
-    pcie_req.head = 0xcafefee0 | channel;
+    pcie_req.head = 0xcafefee0 | (1 << (channel - 1));
     pcie_req.rxlength = count + sizeof(YUNSDR_READ_REQ) / 4;
     pcie_req.rxtime_l = (uint32_t)*timestamp;
     pcie_req.rxtime_h = *timestamp >> 32;
@@ -322,7 +322,7 @@ int32_t sfp_stream_recv2(YUNSDR_TRANSPORT *trans, void *buf, uint32_t count, uin
     SFP_HANDLE *handle = (SFP_HANDLE *)trans->opaque;
     YUNSDR_READ_REQ pcie_req;
 
-    pcie_req.head = 0xcafefee0 | channel;
+    pcie_req.head = 0xcafefee0 | (1 << (channel - 1));
     pcie_req.rxlength = count + sizeof(YUNSDR_READ_REQ) / 4;
     pcie_req.rxtime_l = (uint32_t)*timestamp;
     pcie_req.rxtime_h = *timestamp >> 32;
