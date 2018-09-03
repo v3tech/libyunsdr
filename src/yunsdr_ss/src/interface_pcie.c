@@ -49,7 +49,7 @@ int32_t pcie_cmd_send(YUNSDR_TRANSPORT *trans, uint8_t rf_id, uint8_t cmd_id, vo
     }
     memset(&pcie_cmd, 0, sizeof(YUNSDR_CMD));
     ret = fpga_recv(handle->fpga, 0, &pcie_cmd, sizeof(YUNSDR_CMD) / 4, 25000);
-    if (ret < 0) {
+    if (ret <= 0) {
         printf("%s failed\n", __func__);
         return ret;
     }
@@ -103,7 +103,7 @@ int32_t pcie_cmd_send_then_recv(YUNSDR_TRANSPORT *trans, uint8_t rf_id, uint8_t 
 
     memset(&pcie_cmd, 0, sizeof(YUNSDR_CMD));
     ret = fpga_recv(handle->fpga, 0, &pcie_cmd, sizeof(YUNSDR_CMD) / 4, 25000);
-    if (ret < 0) {
+    if (ret <= 0) {
         printf("%s failed\n", __func__);
         return ret;
     }
@@ -148,14 +148,14 @@ int32_t pcie_stream_recv(YUNSDR_TRANSPORT *trans, void *buf, uint32_t count, uin
         printf("%s failed\n", __func__);
         return ret;
     }
+    unlock();
 
     ret = fpga_recv(handle->fpga, channel, rx_meta, pcie_cmd.rxlength, 25000);
-    if (ret < 0) {
+    if (ret <= 0) {
         printf("%s failed\n", __func__);
         ret = -EIO;
         return ret;
     }
-    unlock();
 
     *timestamp = ((uint64_t)rx_meta->timestamp_h) << 32 | rx_meta->timestamp_l;
     memcpy(buf, (unsigned char *)rx_meta->payload, count * 4);
@@ -180,14 +180,14 @@ int32_t pcie_stream_recv2(YUNSDR_TRANSPORT *trans, void *buf, uint32_t count, ui
         printf("%s failed\n", __func__);
         return ret;
     }
+    unlock();
 
     ret = fpga_recv(handle->fpga, channel, buf, pcie_cmd.rxlength, 25000);
-    if (ret < 0) {
+    if (ret <= 0) {
         printf("%s failed\n", __func__);
         ret = -EIO;
         return ret;
     }
-    unlock();
 
     YUNSDR_META *rx_meta = (YUNSDR_META *)buf;
     *timestamp = ((uint64_t)rx_meta->timestamp_h) << 32 | rx_meta->timestamp_l;
