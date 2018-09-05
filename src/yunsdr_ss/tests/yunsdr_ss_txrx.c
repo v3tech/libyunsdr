@@ -176,15 +176,31 @@ int main(int argc, char **argv) {
     yunsdr_set_rx_ant_enable (yunsdr, 0, 1);
     yunsdr_set_duplex_select (yunsdr, 0, FDD);
 
-    yunsdr_set_tx_lo_freq (yunsdr, 0, rf_freq);
-    yunsdr_set_tx_sampling_freq (yunsdr, 0, rf_sampling);
-    yunsdr_set_tx_rf_bandwidth (yunsdr, 0, rf_sampling);
-    yunsdr_set_tx1_attenuation (yunsdr, 0, (90 - rf_tx_gain) * 1000);
-    yunsdr_set_rx_lo_freq (yunsdr, 0, rf_freq);
-    yunsdr_set_rx_sampling_freq (yunsdr, 0, rf_sampling);
-    yunsdr_set_rx_rf_bandwidth (yunsdr, 0, rf_sampling);
-    yunsdr_set_rx1_gain_control_mode (yunsdr, 0, RF_GAIN_MGC);
-    yunsdr_set_rx1_rf_gain (yunsdr, 0, rf_rx_gain);
+    uint8_t tx_chipid = 0, rx_chipid = 0;
+    if(rf_tx_ch == TX3_CHANNEL || rf_tx_ch == TX4_CHANNEL)
+        tx_chipid = 1;
+    if(rf_rx_ch == RX3_CHANNEL || rf_rx_ch == RX4_CHANNEL)
+        rx_chipid = 1;
+
+    yunsdr_set_tx_lo_freq (yunsdr, tx_chipid, rf_freq);
+    yunsdr_set_tx_sampling_freq (yunsdr, tx_chipid, rf_sampling);
+    yunsdr_set_tx_rf_bandwidth (yunsdr, tx_chipid, rf_sampling);
+
+    (rf_tx_ch == TX1_CHANNEL || rf_tx_ch == TX3_CHANNEL)?
+        yunsdr_set_tx1_attenuation (yunsdr, tx_chipid, (90 - rf_tx_gain) * 1000):
+        yunsdr_set_tx2_attenuation (yunsdr, tx_chipid, (90 - rf_tx_gain) * 1000);
+
+    yunsdr_set_rx_lo_freq (yunsdr, rx_chipid, rf_freq);
+    yunsdr_set_rx_sampling_freq (yunsdr, rx_chipid, rf_sampling);
+    yunsdr_set_rx_rf_bandwidth (yunsdr, rx_chipid, rf_sampling);
+
+    (rf_rx_ch == RX1_CHANNEL || rf_rx_ch == RX3_CHANNEL)?
+        yunsdr_set_rx1_gain_control_mode (yunsdr, rx_chipid, RF_GAIN_MGC):
+        yunsdr_set_rx2_gain_control_mode (yunsdr, rx_chipid, RF_GAIN_MGC);
+
+    (rf_rx_ch == RX1_CHANNEL || rf_rx_ch == RX3_CHANNEL)?
+        yunsdr_set_rx1_rf_gain (yunsdr, rx_chipid, rf_rx_gain):
+        yunsdr_set_rx2_rf_gain (yunsdr, rx_chipid, rf_rx_gain);
 
     printf("Subframe len:   %d samples\n", flen);
     printf("Time advance:   %f us\n",time_adv_sec*1e6);
