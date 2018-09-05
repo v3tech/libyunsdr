@@ -14,6 +14,12 @@ int32_t pcie_cmd_send(YUNSDR_TRANSPORT *trans, uint8_t rf_id, uint8_t cmd_id, vo
     int ret = 0;
     PCIE_HANDLE *handle = (PCIE_HANDLE *)trans->opaque;
     YUNSDR_CMD pcie_cmd;
+
+    if(handle->num_of_channel <= 3 && rf_id > 0) {
+        printf("%s Invalid rf chip id %u\n", __func__, rf_id);
+        return -EINVAL;
+    }
+
     uint64_t parameter;
     switch (len)
     {
@@ -62,6 +68,12 @@ int32_t pcie_cmd_send_then_recv(YUNSDR_TRANSPORT *trans, uint8_t rf_id, uint8_t 
     int ret = 0;
     PCIE_HANDLE *handle = (PCIE_HANDLE *)trans->opaque;
     YUNSDR_CMD pcie_cmd;
+
+    if(handle->num_of_channel <= 3 && rf_id > 0) {
+        printf("%s Invalid rf chip id %u\n", __func__, rf_id);
+        return -EINVAL;
+    }
+
     uint64_t parameter;
     switch (len)
     {
@@ -137,6 +149,11 @@ int32_t pcie_stream_recv(YUNSDR_TRANSPORT *trans, void *buf, uint32_t count, uin
     YUNSDR_META *rx_meta = trans->rx_meta;
     YUNSDR_READ_REQ pcie_cmd;
 
+    if(channel >= handle->num_of_channel) {
+        printf("%s Invalid channel %u\n", __func__, channel);
+        return -EINVAL;
+    }
+
     pcie_cmd.head = 0xcafefee0 | (1 << (channel - 1));
     pcie_cmd.rxlength = count + sizeof(YUNSDR_READ_REQ) / 4;
     pcie_cmd.rxtime_l = (uint32_t)*timestamp;
@@ -168,6 +185,11 @@ int32_t pcie_stream_recv2(YUNSDR_TRANSPORT *trans, void *buf, uint32_t count, ui
     int ret;
     PCIE_HANDLE *handle = (PCIE_HANDLE *)trans->opaque;
     YUNSDR_READ_REQ pcie_cmd;
+
+    if(channel >= handle->num_of_channel) {
+        printf("%s Invalid channel %u\n", __func__, channel);
+        return -EINVAL;
+    }
 
     pcie_cmd.head = 0xcafefee0 | (1 << (channel - 1));
     pcie_cmd.rxlength = count + sizeof(YUNSDR_READ_REQ) / 4;
@@ -202,6 +224,11 @@ int32_t pcie_stream_send(YUNSDR_TRANSPORT *trans, void *buf, uint32_t count, uin
     PCIE_HANDLE *handle = (PCIE_HANDLE *)trans->opaque;
     YUNSDR_META *tx_meta = trans->tx_meta;
 
+    if(channel >= handle->num_of_channel) {
+        printf("%s Invalid channel %u\n", __func__, channel);
+        return -EINVAL;
+    }
+
     tx_meta->timestamp_l = (uint32_t)timestamp;
     tx_meta->timestamp_h = (uint32_t)(timestamp >> 32);
     tx_meta->head = 0xdeadbeef;
@@ -235,6 +262,11 @@ int32_t pcie_stream_send2(YUNSDR_TRANSPORT *trans, void *buf, uint32_t count, ui
     char *samples;
     PCIE_HANDLE *handle = (PCIE_HANDLE *)trans->opaque;
     YUNSDR_META *tx_meta = trans->tx_meta;
+
+    if(channel >= handle->num_of_channel) {
+        printf("%s Invalid channel %u\n", __func__, channel);
+        return -EINVAL;
+    }
 
     tx_meta->timestamp_l = (uint32_t)timestamp;
     tx_meta->timestamp_h = (uint32_t)(timestamp >> 32);
@@ -296,12 +328,13 @@ int32_t init_interface_pcie(YUNSDR_TRANSPORT *trans)
             return -EINVAL;
         }
     }
-    handle->fpga = fpga_open(handle->id);
 
+    handle->fpga = fpga_open(handle->id);
     if (handle->fpga == NULL) {
         printf("Could not open FPGA %d\n", handle->id);
         return -ENODEV;
     }
+    handle->num_of_channel = info.num_chnls[handle->id];
 
     // Reset
     fpga_reset(handle->fpga);

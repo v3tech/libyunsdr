@@ -11,6 +11,7 @@
 typedef struct interface_handle_pcie {
     fpga_t *fpga;
     int32_t id;
+    int32_t num_of_channel;
 }PCIE_HANDLE;
 
 
