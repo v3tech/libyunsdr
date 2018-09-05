@@ -164,7 +164,7 @@ int main(int argc, char **argv) {
     // Send through RF 
     YUNSDR_DESCRIPTOR *yunsdr;
     printf("Opening RF device...\n");
-    yunsdr = yunsdr_open_device("pcie:0");
+    yunsdr = yunsdr_open_device(rf_args);
     if (yunsdr <= 0) {
         fprintf(stderr, "Error opening rf\n");
         exit(-1);
