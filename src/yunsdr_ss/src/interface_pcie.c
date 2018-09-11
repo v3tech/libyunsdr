@@ -69,7 +69,7 @@ int32_t pcie_cmd_send_then_recv(YUNSDR_TRANSPORT *trans, uint8_t rf_id, uint8_t 
     PCIE_HANDLE *handle = (PCIE_HANDLE *)trans->opaque;
     YUNSDR_CMD pcie_cmd;
 
-    if(handle->num_of_channel <= 3 && rf_id > 0) {
+    if(handle->num_of_channel <= 3 && rf_id > 0 && cmd_id <= 28 && cmd_id >= 34) {
         printf("%s Invalid rf chip id %u\n", __func__, rf_id);
         return -EINVAL;
     }
