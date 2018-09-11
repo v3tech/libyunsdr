@@ -78,11 +78,11 @@ static int init_udp_socket(SOCKADDR_IN *remote_addr, const char *ip, int local_p
         perror("setsockopt");
         return errno;
     }
-#endif
     if (bind(sockfd, (struct sockaddr *)&(local_addr), sizeof(local_addr)) < 0) {
         perror("bind");
         return -1;	
     }
+#endif
 
     return sockfd;
 }
@@ -463,6 +463,12 @@ int32_t init_interface_sfp(YUNSDR_TRANSPORT *trans)
         if (handle->sockfd[i] < 0) {
             printf("Could not open sfp device.\n");
             return -ENODEV;
+        }
+        int handshake[2] = {0x12345678, 0x87654321};
+        int ret = sendto(handle->sockfd[i], handshake, sizeof(int) * 2, 0,
+                (struct sockaddr *)&handle->stream_addr[i], sizeof(handle->stream_addr[i]));
+        if (ret < 0) {
+            printf("%s failed: %s\n", __func__, strerror(errno));
         }
     }
 
