@@ -1,6 +1,4 @@
-
-addpath("~/work/gnuradio/gnuradio/src/gnuradio/gr-utils/octave");
-
+%& read samples from signal file
 d = read_short_binary('~/work/gnuradio/libyunsdr/build/rx_signal_file');
 %d = read_short_binary('~/work/gnuradio/libyunsdr/build/rf_txrx_tone');
 subplot(2,1,1);
