@@ -3,6 +3,7 @@
 #include <errno.h>
 #if !defined(__WINDOWS_) && !defined(_WIN32)
 #include <unistd.h>
+#include <sys/sysinfo.h>
 #endif
 #include <fcntl.h>
 #include <string.h>
@@ -59,10 +60,6 @@ static int init_udp_socket(SOCKADDR_IN *remote_addr, const char *ip, int local_p
     local_addr.sin_port = htons(local_port);
     //uint32_t mode = 1;  //non-blocking mode is enabled.
     //ioctlsocket(sockfd, FIONBIO, (u_long *)&mode);
-
-    int buflen = 50*1024*1024;
-    if (setsockopt(sockfd, SOL_SOCKET, SO_RCVBUF, (char *)&buflen, sizeof(int)) < 0)
-        perror("setsockopt");
 #else
     remote_addr->sin_family = AF_INET;
     remote_addr->sin_addr.s_addr = inet_addr(ip);
@@ -74,8 +71,8 @@ static int init_udp_socket(SOCKADDR_IN *remote_addr, const char *ip, int local_p
     local_addr.sin_port = htons(local_port);
 
     //fcntl(sockfd, F_SETFL, O_NONBLOCK);
-
 #endif
+
 #if 0
     int reuse = 1;
     if (setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, (char *)&reuse, sizeof(int)) < 0) {
@@ -473,6 +470,32 @@ int32_t init_interface_sfp(YUNSDR_TRANSPORT *trans)
             return -ENODEV;
         }
         printf("========>UDP data socket %d\n", handle->sockfd[i]);
+#if defined(__WINDOWS_) || defined(_WIN32)
+        uint32_t buflen;
+        MEMORYSTATUSEX statusex;
+        statusex.dwLength = sizeof(statusex);
+        if (GlobalMemoryStatusEx(&statusex))
+            //buflen = statusex.ullTotalPhys / 50;
+            buflen = statusex.ullAvailPhys / 50;
+        else
+            buflen = 100*1024*1024;
+        if (setsockopt(handle->sockfd[i], SOL_SOCKET, SO_RCVBUF, (char *)&buflen, sizeof(uint32_t)) < 0)
+            perror("setsockopt:");
+        else
+            printf("========>UDP socket buffer size: %u Bytes\n", buflen);
+#else
+        struct sysinfo s_info;
+        uint32_t buflen;
+        if(sysinfo(&s_info) < 0)
+            buflen = 100*1024*1024;
+        else
+            buflen = s_info.freeram / 50;
+        if (setsockopt(handle->sockfd[i], SOL_SOCKET, SO_RCVBUF, &buflen, sizeof(int)) < 0)
+            perror("setsockopt:");
+        else
+            printf("========>UDP socket buffer size: %u Bytes\n", buflen);
+#endif
+
         int handshake[2] = {0x12345678, 0x87654321};
         int ret = sendto(handle->sockfd[i], handshake, sizeof(int) * 2, 0,
                 (struct sockaddr *)&handle->stream_addr[i], sizeof(handle->stream_addr[i]));
