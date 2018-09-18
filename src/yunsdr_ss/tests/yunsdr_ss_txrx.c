@@ -1,4 +1,4 @@
-
+#include <inttypes.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -49,41 +49,42 @@ void usage(char *prog) {
 
 void parse_args(int argc, char **argv) {
     int opt;
-    while ((opt = getopt(argc, argv, "ioafgGtTcCs")) != -1) {
+    while ((opt = getopt(argc, argv, "i:o:a:f:g:G:t:T:c:C:s:h")) != -1) {
         switch (opt) {
         case 'a':
-            rf_args = argv[optind];
+            rf_args = optarg;
             break;
         case 'o':
-            output_filename = argv[optind];
+            output_filename = optarg;
             break;
         case 'i':
-            input_filename = argv[optind];
+            input_filename = optarg;
             break;
         case 't':
-            tone_offset_hz = atof(argv[optind]);
+            tone_offset_hz = atof(optarg);
             break;
         case 'T':
-            time_adv_samples = atoi(argv[optind]);
+            time_adv_samples = atoi(optarg);
             break;
         case 'f':
-            rf_freq = atof(argv[optind]);
+            rf_freq = atof(optarg);
             break;
         case 'g':
-            rf_rx_gain = atof(argv[optind]);
+            rf_rx_gain = atof(optarg);
             break;
         case 'G':
-            rf_tx_gain = atof(argv[optind]);
+            rf_tx_gain = atof(optarg);
             break;
         case 'c':
-            rf_rx_ch = atoi(argv[optind]);
+            rf_rx_ch = atoi(optarg);
             break;
         case 'C':
-            rf_tx_ch = atoi(argv[optind]);
+            rf_tx_ch = atoi(optarg);
             break;
         case 's':
-            rf_sampling = atof(argv[optind]);
+            rf_sampling = atof(optarg);
             break;
+        case 'h':
         default:
             usage(argv[0]);
             exit(-1);
@@ -233,15 +234,30 @@ int main(int argc, char **argv) {
         yunsdr_read_samples(yunsdr, &rx_buffer[flen*nframe], flen, rf_rx_ch, &tstamp);
         nframe++;
         if (nframe==9) {
-            tstamp = tstamp + yunsdr_timeNsToTicks((2e-3-time_adv_sec)*1e9, rf_sampling);
+            tstamp = tstamp + yunsdr_timeNsToTicks((4e-3-time_adv_sec)*1e9, rf_sampling);
             yunsdr_write_samples(yunsdr, tx_buffer, flen+time_adv_samples, rf_tx_ch, tstamp);
             printf("Transmitting Signal\n");        
         }
-
     }
+    printf(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>\n");
+    uint32_t count = 0;
+    yunsdr_get_channel_event(yunsdr, RX_CHANNEL_TIMEOUT, rf_rx_ch, &count);
+    printf("RX%d Channel timeout: %u\n", rf_rx_ch, count);
+    yunsdr_get_channel_event(yunsdr, TX_CHANNEL_TIMEOUT, rf_tx_ch, &count);
+    printf("TX%d Channel timeout: %u\n", rf_tx_ch, count);
+    yunsdr_get_channel_event(yunsdr, RX_CHANNEL_OVERFLOW, rf_rx_ch, &count);
+    printf("RX%d Channel overflow: %u\n", rf_rx_ch, count);
+    yunsdr_get_channel_event(yunsdr, TX_CHANNEL_UNDERFLOW, rf_tx_ch, &count);
+    printf("TX%d Channel underflow: %u\n", rf_tx_ch, count);
+    yunsdr_get_channel_event(yunsdr, RX_CHANNEL_COUNT, rf_rx_ch, &count);
+    printf("RX%d Channel count: %u\n", rf_rx_ch, count);
+    yunsdr_get_channel_event(yunsdr, TX_CHANNEL_COUNT, rf_tx_ch, &count);
+    printf("TX%d Channel count: %u\n", rf_tx_ch, count);
+    printf("<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<\n");
+
     yunsdr_close_device(yunsdr);
 
-    save_file(output_filename, &rx_buffer[10*flen], flen*sizeof(iq_t));
+    save_file(output_filename, &rx_buffer[12*flen], flen*sizeof(iq_t));
 
     free(tx_buffer);
     free(rx_buffer);
