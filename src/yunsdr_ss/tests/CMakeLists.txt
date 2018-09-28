@@ -9,8 +9,11 @@ endif(MSVC)
 INCLUDE_DIRECTORIES("${PROJECT_SOURCE_DIR}/src/yunsdr_ss/include")
 
 ADD_EXECUTABLE(yunsdr_ss_txrx ${YUNSDR_TXRX_SRC})
+if(MSVC)
+	set_target_properties(yunsdr_ss_txrx PROPERTIES COMPILE_FLAGS "/MT")
+endif(MSVC)
 if(NOT MSVC)
-target_link_libraries(yunsdr_ss_txrx m)
+	target_link_libraries(yunsdr_ss_txrx m)
 endif(NOT MSVC)
 target_link_libraries(yunsdr_ss_txrx yunsdr_ss)
 
