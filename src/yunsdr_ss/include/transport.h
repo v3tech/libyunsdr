@@ -9,7 +9,7 @@
 
 #define MIN(x, y)  ((x < y)?x:y)
 
-typedef struct yunsdr_pcie_cmd {
+typedef struct yunsdr_trans_cmd {
     uint32_t head;
     uint8_t  cmd_id;
     uint8_t  w_or_r;
@@ -19,7 +19,7 @@ typedef struct yunsdr_pcie_cmd {
     uint32_t cmd_h;
 }YUNSDR_CMD;
 
-typedef struct yunsdr_pcie_cmd_read {
+typedef struct yunsdr_trans_read_req {
     uint32_t head;
     uint32_t rxlength;
     uint32_t rxtime_l;

@@ -54,11 +54,15 @@ static int init_udp_socket(SOCKADDR_IN *remote_addr, const char *ip, int local_p
     remote_addr->sin_family = AF_INET;
     remote_addr->sin_port = htons(remote_port);
 
-    local_addr.sin_addr.S_un.S_addr = inet_addr(ip);
+    //local_addr.sin_addr.S_un.S_addr = inet_addr(ip);
     local_addr.sin_family = AF_INET;
     local_addr.sin_port = htons(local_port);
-    uint32_t mode = 1;  //non-blocking mode is enabled.
-    ioctlsocket(sockfd, FIONBIO, (u_long *)&mode);
+    //uint32_t mode = 1;  //non-blocking mode is enabled.
+    //ioctlsocket(sockfd, FIONBIO, (u_long *)&mode);
+
+    int buflen = 50*1024*1024;
+    if (setsockopt(sockfd, SOL_SOCKET, SO_RCVBUF, (char *)&buflen, sizeof(int)) < 0)
+        perror("setsockopt");
 #else
     remote_addr->sin_family = AF_INET;
     remote_addr->sin_addr.s_addr = inet_addr(ip);
@@ -113,7 +117,11 @@ static inline int8_t wait_for_recv_ready(SOCKET sock_fd, double timeout)
 #endif
 
     //call select with timeout on receive socket
+#if defined(__WINDOWS_) || defined(_WIN32)
+    return TEMP_FAILURE_RETRY(select(0, &rset, NULL, NULL, ptv)) > 0;
+#else
     return TEMP_FAILURE_RETRY(select(sock_fd + 1, &rset, NULL, NULL, ptv)) > 0;
+#endif
 }
 
 
@@ -121,7 +129,7 @@ int32_t sfp_cmd_send(YUNSDR_TRANSPORT *trans, uint8_t rf_id, uint8_t cmd_id, voi
 {
     int ret = 0;
     SFP_HANDLE *handle = (SFP_HANDLE *)trans->opaque;
-    YUNSDR_CMD pcie_cmd;
+    YUNSDR_CMD sfp_cmd;
 #if defined(__GNUC__)
     socklen_t addr_len = sizeof(struct sockaddr_in);
 #else
@@ -146,22 +154,22 @@ int32_t sfp_cmd_send(YUNSDR_TRANSPORT *trans, uint8_t rf_id, uint8_t cmd_id, voi
         return -EINVAL;
     }
 
-    pcie_cmd.head = 0xdeadbeef;
-    pcie_cmd.reserve = 0;
-    pcie_cmd.rf_id = rf_id;
-    pcie_cmd.w_or_r = 1;
-    pcie_cmd.cmd_id = cmd_id;
-    pcie_cmd.cmd_l = (uint32_t)parameter;
-    pcie_cmd.cmd_h = parameter >> 32;
+    sfp_cmd.head = 0xdeadbeef;
+    sfp_cmd.reserve = 0;
+    sfp_cmd.rf_id = rf_id;
+    sfp_cmd.w_or_r = 1;
+    sfp_cmd.cmd_id = cmd_id;
+    sfp_cmd.cmd_l = (uint32_t)parameter;
+    sfp_cmd.cmd_h = parameter >> 32;
 
-    ret = sendto(handle->cmd_sock, (char *)&pcie_cmd, sizeof(YUNSDR_CMD), 0, 
+    ret = sendto(handle->cmd_sock, (char *)&sfp_cmd, sizeof(YUNSDR_CMD), 0, 
             (struct sockaddr *)&handle->cmd_addr, sizeof(handle->cmd_addr));
     if (ret < 0) {
         printf("%s failed, cmd id:%d\n", __func__, cmd_id);
         return ret;
     }
     if (wait_for_recv_ready(handle->cmd_sock, 3)) {
-        ret = recvfrom(handle->cmd_sock, (char *)&pcie_cmd, sizeof(YUNSDR_CMD), 0,
+        ret = recvfrom(handle->cmd_sock, (char *)&sfp_cmd, sizeof(YUNSDR_CMD), 0,
                 (struct sockaddr *)&handle->cmd_addr, &addr_len);
         if (ret < 0) {
             return -1;
@@ -177,7 +185,7 @@ int32_t sfp_cmd_send_then_recv(YUNSDR_TRANSPORT *trans, uint8_t rf_id, uint8_t c
 {
     int ret = 0;
     SFP_HANDLE *handle = (SFP_HANDLE *)trans->opaque;
-    YUNSDR_CMD pcie_cmd;
+    YUNSDR_CMD sfp_cmd;
 
 #if defined(__GNUC__)
     socklen_t addr_len = sizeof(struct sockaddr_in);
@@ -203,30 +211,30 @@ int32_t sfp_cmd_send_then_recv(YUNSDR_TRANSPORT *trans, uint8_t rf_id, uint8_t c
         return -EINVAL;
     }
 
-    pcie_cmd.head = 0xdeadbeef;
-    pcie_cmd.reserve = 0;
-    pcie_cmd.rf_id = rf_id;
-    pcie_cmd.w_or_r = 0;
-    pcie_cmd.cmd_id = cmd_id;
+    sfp_cmd.head = 0xdeadbeef;
+    sfp_cmd.reserve = 0;
+    sfp_cmd.rf_id = rf_id;
+    sfp_cmd.w_or_r = 0;
+    sfp_cmd.cmd_id = cmd_id;
     if(with_param) {
-        pcie_cmd.cmd_l = (uint32_t)parameter;
-        pcie_cmd.cmd_h = parameter >> 32;
+        sfp_cmd.cmd_l = (uint32_t)parameter;
+        sfp_cmd.cmd_h = parameter >> 32;
     } else {
-        pcie_cmd.cmd_l = 0;
-        pcie_cmd.cmd_h = 0;
+        sfp_cmd.cmd_l = 0;
+        sfp_cmd.cmd_h = 0;
     }
 
-    ret = sendto(handle->cmd_sock, (char *)&pcie_cmd, sizeof(YUNSDR_CMD), 0,
+    ret = sendto(handle->cmd_sock, (char *)&sfp_cmd, sizeof(YUNSDR_CMD), 0,
             (struct sockaddr *)&handle->cmd_addr, sizeof(handle->cmd_addr));
     if (ret < 0) {
         printf("%s failed, cmd id:%d\n", __func__, cmd_id);
         return -1;
     }
 
-    memset(&pcie_cmd, 0, sizeof(YUNSDR_CMD));
+    memset(&sfp_cmd, 0, sizeof(YUNSDR_CMD));
 
     if (wait_for_recv_ready(handle->cmd_sock, 3)) {
-        ret = recvfrom(handle->cmd_sock, (char *)&pcie_cmd, sizeof(YUNSDR_CMD), 0,
+        ret = recvfrom(handle->cmd_sock, (char *)&sfp_cmd, sizeof(YUNSDR_CMD), 0,
                 (struct sockaddr *)&handle->cmd_addr, &addr_len);
         if (ret < 0) {
             return -1;
@@ -240,16 +248,16 @@ int32_t sfp_cmd_send_then_recv(YUNSDR_TRANSPORT *trans, uint8_t rf_id, uint8_t c
     switch (len)
     {
     case 1:
-        *(uint8_t *)buf = (uint8_t)pcie_cmd.cmd_l;
+        *(uint8_t *)buf = (uint8_t)sfp_cmd.cmd_l;
         break;
     case 2:
-        *(uint16_t *)buf = (uint16_t)pcie_cmd.cmd_l;
+        *(uint16_t *)buf = (uint16_t)sfp_cmd.cmd_l;
         break;
     case 4:
-        *(uint32_t *)buf = pcie_cmd.cmd_l;
+        *(uint32_t *)buf = sfp_cmd.cmd_l;
         break;
     case 8:
-        *(uint64_t *)buf = pcie_cmd.cmd_l | ((uint64_t)pcie_cmd.cmd_h << 32);
+        *(uint64_t *)buf = sfp_cmd.cmd_l | ((uint64_t)sfp_cmd.cmd_h << 32);
         break;
     default:
         return -EINVAL;
@@ -263,14 +271,14 @@ int32_t sfp_stream_recv(YUNSDR_TRANSPORT *trans, void *buf, uint32_t count, uint
     int ret;
     SFP_HANDLE *handle = (SFP_HANDLE *)trans->opaque;
     YUNSDR_META *rx_meta = trans->rx_meta;
-    YUNSDR_READ_REQ pcie_req;
+    YUNSDR_READ_REQ sfp_req;
 
-    pcie_req.head = 0xcafefee0 | (1 << (channel - 1));
-    pcie_req.rxlength = count + sizeof(YUNSDR_READ_REQ) / 4;
-    pcie_req.rxtime_l = (uint32_t)*timestamp;
-    pcie_req.rxtime_h = *timestamp >> 32;
+    sfp_req.head = 0xcafefee0 | (1 << (channel - 1));
+    sfp_req.rxlength = count + sizeof(YUNSDR_READ_REQ) / 4;
+    sfp_req.rxtime_l = (uint32_t)*timestamp;
+    sfp_req.rxtime_h = *timestamp >> 32;
 
-    ret = sendto(handle->cmd_sock, (char *)&pcie_req, sizeof(YUNSDR_READ_REQ), 0,
+    ret = sendto(handle->cmd_sock, (char *)&sfp_req, sizeof(YUNSDR_READ_REQ), 0,
             (struct sockaddr *)&handle->cmd_addr, sizeof(handle->cmd_addr));
     if (ret < 0) {
         printf("%s failed\n", __func__);
@@ -320,14 +328,14 @@ int32_t sfp_stream_recv2(YUNSDR_TRANSPORT *trans, void *buf, uint32_t count, uin
 {
     int ret;
     SFP_HANDLE *handle = (SFP_HANDLE *)trans->opaque;
-    YUNSDR_READ_REQ pcie_req;
+    YUNSDR_READ_REQ sfp_req;
 
-    pcie_req.head = 0xcafefee0 | (1 << (channel - 1));
-    pcie_req.rxlength = count + sizeof(YUNSDR_READ_REQ) / 4;
-    pcie_req.rxtime_l = (uint32_t)*timestamp;
-    pcie_req.rxtime_h = *timestamp >> 32;
+    sfp_req.head = 0xcafefee0 | (1 << (channel - 1));
+    sfp_req.rxlength = count + sizeof(YUNSDR_READ_REQ) / 4;
+    sfp_req.rxtime_l = (uint32_t)*timestamp;
+    sfp_req.rxtime_h = *timestamp >> 32;
 
-    ret = sendto(handle->cmd_sock, (char *)&pcie_req, sizeof(YUNSDR_READ_REQ), 0,
+    ret = sendto(handle->cmd_sock, (char *)&sfp_req, sizeof(YUNSDR_READ_REQ), 0,
             (struct sockaddr *)&handle->cmd_addr, sizeof(handle->cmd_addr));
     if (ret < 0) {
         printf("%s failed\n", __func__);
@@ -464,6 +472,7 @@ int32_t init_interface_sfp(YUNSDR_TRANSPORT *trans)
             printf("Could not open sfp device.\n");
             return -ENODEV;
         }
+        printf("========>UDP data socket %d\n", handle->sockfd[i]);
         int handshake[2] = {0x12345678, 0x87654321};
         int ret = sendto(handle->sockfd[i], handshake, sizeof(int) * 2, 0,
                 (struct sockaddr *)&handle->stream_addr[i], sizeof(handle->stream_addr[i]));
