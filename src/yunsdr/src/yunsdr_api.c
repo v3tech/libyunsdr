@@ -871,7 +871,7 @@ int32_t yunsdr_get_rx_lo_freq (YUNSDR_DESCRIPTOR *yunsdr, uint64_t *lo_freq_hz)
 	if(ret < 0)
 		*lo_freq_hz = 0;
 	else
-		*lo_freq_hz = cmd[1];
+		*lo_freq_hz = ((uint64_t)cmd[0]&0x1)<<32|cmd[1];
 
 	return ret;
 }
