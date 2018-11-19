@@ -392,6 +392,16 @@ int32_t yunsdr_set_trxsw_fpga_enable(YUNSDR_DESCRIPTOR *yunsdr, uint8_t rf_id,
     return yunsdr->trans->cmd_send(yunsdr->trans, rf_id, 64, &enable, sizeof(uint8_t));
 }
 
+int32_t yunsdr_set_hwbuf_depth(YUNSDR_DESCRIPTOR *yunsdr, uint8_t rf_id, uint32_t depth)
+{
+    return yunsdr->trans->cmd_send(yunsdr->trans, rf_id, 70, &depth, sizeof(uint32_t));
+}
+
+int32_t yunsdr_get_hwbuf_depth(YUNSDR_DESCRIPTOR *yunsdr, uint8_t rf_id, uint32_t *depth)
+{
+    return yunsdr->trans->cmd_send_then_recv(yunsdr->trans, 0, 70, depth, sizeof(uint32_t), 0);
+}
+
 int32_t yunsdr_get_firmware_version(YUNSDR_DESCRIPTOR *yunsdr, uint32_t *version)
 {
     uint32_t fpga_ver, arm_ver;
