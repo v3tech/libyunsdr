@@ -53,8 +53,11 @@ struct yunsdr_transport {
     int32_t (*stream_recv)(YUNSDR_TRANSPORT *trans, void *buf, uint32_t count, uint8_t channel, uint64_t *timestamp);
     /* for zero copy, the data in buf contains a 16-byte header */
     int32_t (*stream_recv2)(YUNSDR_TRANSPORT *trans, void *buf, uint32_t count, uint8_t channel, uint64_t *timestamp);
+    /* for mimo mode */
+    int32_t (*stream_recv3)(YUNSDR_TRANSPORT *trans, void **buf, uint32_t count, uint8_t channel_mask, uint64_t *timestamp);
     int32_t (*stream_send)(YUNSDR_TRANSPORT *trans, void *buf, uint32_t count, uint8_t channel, uint64_t timestamp);
     int32_t (*stream_send2)(YUNSDR_TRANSPORT *trans, void *buf, uint32_t count, uint8_t channel, uint64_t timestamp, uint32_t flags);
+    int32_t (*stream_send3)(YUNSDR_TRANSPORT *trans, const void **buf, uint32_t count, uint8_t channel_mask, uint64_t timestamp, uint32_t flags);
 };
 
 int32_t init_transport(YUNSDR_TRANSPORT *trans);

@@ -12,7 +12,19 @@
 int32_t init_transport(YUNSDR_TRANSPORT *trans)
 {
     int ret;
-
+    
+    ret = posix_memalign((void **)&trans->rx_meta, 16, sizeof(int16_t) * MAX_BUFFSIZE + sizeof(YUNSDR_META));
+    if(ret) {
+        printf("Failed to alloc memory\n");
+        return -1;
+    }
+    ret = posix_memalign((void **)&trans->tx_meta, 16, sizeof(int16_t) * MAX_BUFFSIZE + sizeof(YUNSDR_META));
+    if(ret) {
+        printf("Failed to alloc memory\n");
+        return -1;
+    }
+    ret = 0;
+#if 0
     trans->rx_meta = (YUNSDR_META *)calloc(1, MAX_BUFFSIZE + sizeof(YUNSDR_META));
     if (!trans->rx_meta) {
         ret = -1;
@@ -28,7 +40,7 @@ int32_t init_transport(YUNSDR_TRANSPORT *trans)
     else {
         ret = 0;
     }
-
+#endif
     switch (trans->type) {
     case INTERFACE_PCIE:
 #ifdef ENABLE_PCIE

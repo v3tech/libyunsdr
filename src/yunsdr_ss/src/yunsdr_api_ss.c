@@ -449,6 +449,12 @@ int32_t yunsdr_read_samples_zerocopy(YUNSDR_DESCRIPTOR *yunsdr,
     return  yunsdr->trans->stream_recv2(yunsdr->trans, buffer, count, channel, timestamp);
 }
 
+int32_t yunsdr_read_samples_multiport(YUNSDR_DESCRIPTOR *yunsdr,
+        void **buffer, uint32_t count, uint8_t channel_mask, uint64_t *timestamp)
+{
+    return  yunsdr->trans->stream_recv3(yunsdr->trans, buffer, count, channel_mask, timestamp);
+}
+
 int32_t yunsdr_write_samples(YUNSDR_DESCRIPTOR *yunsdr,
         void *buffer, uint32_t count, RF_TX_CHANNEL channel, uint64_t timestamp)
 {
@@ -459,6 +465,12 @@ int32_t yunsdr_write_samples2(YUNSDR_DESCRIPTOR *yunsdr,
         void *buffer, uint32_t count, RF_TX_CHANNEL channel, uint64_t timestamp, uint32_t flags)
 {
     return  yunsdr->trans->stream_send2(yunsdr->trans, buffer, count, channel, timestamp, flags);
+}
+
+int32_t yunsdr_write_samples_multiport(YUNSDR_DESCRIPTOR *yunsdr,
+        const void **buffer, uint32_t count, uint8_t channel_mask, uint64_t timestamp, uint32_t flags)
+{
+    return  yunsdr->trans->stream_send3(yunsdr->trans, buffer, count, channel_mask, timestamp, flags);
 }
 
 #ifdef LV_HAVE_SSE

@@ -217,6 +217,9 @@ DLLEXPORT int32_t yunsdr_get_channel_event(YUNSDR_DESCRIPTOR *yunsdr, CHANNEL_EV
 DLLEXPORT int32_t yunsdr_read_samples(YUNSDR_DESCRIPTOR *yunsdr,
         void *buffer, uint32_t count, RF_RX_CHANNEL channel, uint64_t *timestamp);
 
+DLLEXPORT int32_t yunsdr_read_samples_multiport(YUNSDR_DESCRIPTOR *yunsdr,
+        void **buffer, uint32_t count, uint8_t channel_mask, uint64_t *timestamp);
+
 /* Since the data contains a 16-byte header, the size of the buffer should be
  * greater than or equal to (count*4+16) Bytes*/
 DLLEXPORT int32_t yunsdr_read_samples_zerocopy(YUNSDR_DESCRIPTOR *yunsdr,
@@ -227,6 +230,8 @@ DLLEXPORT int32_t yunsdr_write_samples(YUNSDR_DESCRIPTOR *yunsdr,
 
 DLLEXPORT int32_t yunsdr_write_samples2(YUNSDR_DESCRIPTOR *yunsdr,
         void *buffer, uint32_t count, RF_TX_CHANNEL channel, uint64_t timestamp, uint32_t flags);
+DLLEXPORT int32_t yunsdr_write_samples_multiport(YUNSDR_DESCRIPTOR *yunsdr,
+        const void **buffer, uint32_t count, uint8_t channel_mask, uint64_t timestamp, uint32_t flags);
 /***************************************************************************/
 DLLEXPORT void float_to_int16(int16_t *dst, const float *src, int n, float mult);
 DLLEXPORT void int16_to_float(float *dst, const int16_t *src, int len, float mult);

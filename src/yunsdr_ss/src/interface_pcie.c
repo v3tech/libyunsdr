@@ -9,6 +9,9 @@
 #include "debug.h"
 #include "spinlock.h"
 
+extern void int16_to_float(float *dst, const int16_t *src, int len, float mult);
+extern void float_to_int16(int16_t *dst, const float *src, int n, float mult);
+
 int32_t pcie_cmd_send(YUNSDR_TRANSPORT *trans, uint8_t rf_id, uint8_t cmd_id, void *buf, uint32_t len)
 {
     int ret = 0;
@@ -217,6 +220,47 @@ int32_t pcie_stream_recv2(YUNSDR_TRANSPORT *trans, void *buf, uint32_t count, ui
     return count;
 }
 
+int32_t pcie_stream_recv3(YUNSDR_TRANSPORT *trans, void **buf, uint32_t count, uint8_t channel_mask, uint64_t *timestamp)
+{
+    int ret;
+    PCIE_HANDLE *handle = (PCIE_HANDLE *)trans->opaque;
+    YUNSDR_META *rx_meta = trans->rx_meta;
+    YUNSDR_READ_REQ pcie_cmd;
+#if 0
+    if(channel >= handle->num_of_channel) {
+        printf("%s Invalid channel %u\n", __func__, channel);
+        return -EINVAL;
+    }
+#endif
+
+    pcie_cmd.head = 0xcafefee0 | channel_mask;
+    pcie_cmd.rxlength = count + sizeof(YUNSDR_READ_REQ) / 4;
+    pcie_cmd.rxtime_l = (uint32_t)*timestamp;
+    pcie_cmd.rxtime_h = *timestamp >> 32;
+
+    ret = fpga_send(handle->fpga, 0, &pcie_cmd, sizeof(YUNSDR_READ_REQ) / 4, 0, 1, 25000);
+    if (ret < 0) {
+        printf("%s failed\n", __func__);
+        return ret;
+    }
+
+    for(int i = 0; i < 4; i++) {
+        if(channel_mask >> i) {
+            ret = fpga_recv(handle->fpga, i + 1, rx_meta, pcie_cmd.rxlength, 25000);
+            if (ret <= 0) {
+                printf("%s failed\n", __func__);
+                ret = -EIO;
+                return ret;
+            }
+            int16_to_float((float *)buf[i], (short *)rx_meta->payload, count * 2, 1./32767.);
+        }
+    }
+
+    *timestamp = ((uint64_t)rx_meta->timestamp_h) << 32 | rx_meta->timestamp_l;
+
+    return count;
+}
+
 int32_t pcie_stream_send(YUNSDR_TRANSPORT *trans, void *buf, uint32_t count, uint8_t channel, uint64_t timestamp)
 {
     int ret;
@@ -298,6 +342,54 @@ int32_t pcie_stream_send2(YUNSDR_TRANSPORT *trans, void *buf, uint32_t count, ui
     return count;
 }
 
+int32_t pcie_stream_send3(YUNSDR_TRANSPORT *trans, const void **buf, uint32_t count, uint8_t channel_mask, uint64_t timestamp, uint32_t flags)
+{
+    int ret;
+    char *samples;
+    PCIE_HANDLE *handle = (PCIE_HANDLE *)trans->opaque;
+    YUNSDR_META *tx_meta = trans->tx_meta;
+#if 0
+    if(channel >= handle->num_of_channel) {
+        printf("%s Invalid channel %u\n", __func__, channel);
+        return -EINVAL;
+    }
+#endif
+    tx_meta->timestamp_l = (uint32_t)timestamp;
+    tx_meta->timestamp_h = (uint32_t)(timestamp >> 32);
+    if(flags)
+        tx_meta->head        = 0xdeadbeee;
+    else
+        tx_meta->head        = 0xdeadbeef;
+    tx_meta->nsamples = count;
+
+    for(int i = 0; i < 4; i++) {
+        if(channel_mask >> i) {
+            float_to_int16((short *)tx_meta->payload, (float *)buf[i], count * 2, 32767);
+            samples = (void *)tx_meta;
+
+            int32_t remain = 0;
+            int32_t nbytes = 0;
+            int32_t sum = count * 4 + sizeof(YUNSDR_META);
+            do {
+                nbytes = MIN(MAX_TX_BULK_SIZE, sum);
+                remain = sum - nbytes;
+                ret = fpga_send(handle->fpga, i + 1, samples, nbytes / 4, 0, 1, 25000);
+                if (ret < 0) {
+                    printf("%s failed\n", __func__);
+                    ret = -EIO;
+                    return ret;
+                }
+                samples += nbytes;
+                sum -= nbytes;
+            } while (remain > 0);
+        }
+    }
+
+    return count;
+}
+
+
+
 int32_t init_interface_pcie(YUNSDR_TRANSPORT *trans)
 {
     PCIE_HANDLE *handle;
@@ -344,8 +436,10 @@ int32_t init_interface_pcie(YUNSDR_TRANSPORT *trans)
     trans->cmd_send_then_recv = pcie_cmd_send_then_recv;
     trans->stream_recv = pcie_stream_recv;
     trans->stream_recv2 = pcie_stream_recv2;
+    trans->stream_recv3 = pcie_stream_recv3;
     trans->stream_send = pcie_stream_send;
     trans->stream_send2 = pcie_stream_send2;
+    trans->stream_send3 = pcie_stream_send3;
 
     spinlock_init();
 
