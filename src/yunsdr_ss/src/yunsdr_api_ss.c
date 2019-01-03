@@ -437,6 +437,11 @@ int32_t yunsdr_read_timestamp(YUNSDR_DESCRIPTOR *yunsdr, uint8_t rf_id,
     return  yunsdr->trans->cmd_send_then_recv(yunsdr->trans, rf_id, 28, timestamp, sizeof(uint64_t), 0);
 }
 
+DLLEXPORT int32_t yunsdr_set_pps_select (YUNSDR_DESCRIPTOR *yunsdr, uint8_t rf_id, PPSModeEnum pps)
+{
+    return yunsdr->trans->cmd_send(yunsdr->trans, rf_id, 22, &pps, sizeof(uint32_t));
+}
+
 int32_t yunsdr_read_samples(YUNSDR_DESCRIPTOR *yunsdr,
         void *buffer, uint32_t count, RF_RX_CHANNEL channel, uint64_t *timestamp)
 {

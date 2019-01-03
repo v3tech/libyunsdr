@@ -78,6 +78,12 @@ typedef enum {
     RX_CHANNEL_COUNT     = 34,
 }CHANNEL_EVENT;
 
+typedef enum pps_enable {
+    PPS_INTERNAL_EN,
+    PPS_GPS_EN,
+    PPS_EXTERNAL_EN,
+}PPSModeEnum;
+
 /***************************************************************************/
 DLLEXPORT uint64_t yunsdr_ticksToTimeNs(const uint64_t ticks, const double rate);
 DLLEXPORT uint64_t yunsdr_timeNsToTicks(const uint64_t timeNs, const double rate);
@@ -206,6 +212,7 @@ DLLEXPORT int32_t yunsdr_get_hwbuf_depth(YUNSDR_DESCRIPTOR *yunsdr, uint8_t rf_i
 DLLEXPORT int32_t yunsdr_get_firmware_version(YUNSDR_DESCRIPTOR *yunsdr, uint32_t *version);
 DLLEXPORT int32_t yunsdr_get_model_version(YUNSDR_DESCRIPTOR *yunsdr, uint32_t *version);
 
+DLLEXPORT int32_t yunsdr_set_pps_select (YUNSDR_DESCRIPTOR *yunsdr, uint8_t rf_id, PPSModeEnum pps);
 /***************************************************************************/
 DLLEXPORT int32_t yunsdr_enable_timestamp(YUNSDR_DESCRIPTOR *yunsdr, uint8_t rf_id,
         uint8_t enbale);
