@@ -13,8 +13,11 @@
 #include "debug.h"
 
 
-static int local_port[MAX_RF_STREAM] = { LOCAL_STREAM1_PORT, LOCAL_STREAM2_PORT };
-static int remote_port[MAX_RF_STREAM] = { REMOTE_STREAM1_PORT, REMOTE_STREAM2_PORT };
+static int local_port[MAX_RF_STREAM] = { LOCAL_STREAM1_PORT, LOCAL_STREAM2_PORT, LOCAL_STREAM3_PORT, LOCAL_STREAM4_PORT};
+static int remote_port[MAX_RF_STREAM] = { REMOTE_STREAM1_PORT, REMOTE_STREAM2_PORT, REMOTE_STREAM3_PORT, REMOTE_STREAM4_PORT};
+
+extern void int16_to_float(float *dst, const int16_t *src, int len, float mult);
+extern void float_to_int16(int16_t *dst, const float *src, int n, float mult);
 
 static int init_udp_socket(SOCKADDR_IN *remote_addr, const char *ip, int local_port, int remote_port)
 {
@@ -65,10 +68,10 @@ static int init_udp_socket(SOCKADDR_IN *remote_addr, const char *ip, int local_p
     remote_addr->sin_addr.s_addr = inet_addr(ip);
     remote_addr->sin_port = htons(remote_port);
 
-    local_addr.sin_family = AF_INET;
+    //local_addr.sin_family = AF_INET;
     //local_addr.sin_addr.s_addr = htonl(INADDR_ANY);
-    local_addr.sin_addr.s_addr = inet_addr("169.254.45.118");
-    local_addr.sin_port = htons(local_port);
+    //local_addr.sin_addr.s_addr = inet_addr("169.254.45.118");
+    //local_addr.sin_port = htons(local_port);
 
     //fcntl(sockfd, F_SETFL, O_NONBLOCK);
 #endif
@@ -377,6 +380,67 @@ retry:		ret = recvfrom(handle->sockfd[channel - 1], buf_ptr, remain, 0,
 
 }
 
+int32_t sfp_stream_recv3(YUNSDR_TRANSPORT *trans, void **buf, uint32_t count, uint8_t channel_mask, uint64_t *timestamp)
+{
+    int ret;
+    SFP_HANDLE *handle = (SFP_HANDLE *)trans->opaque;
+    YUNSDR_READ_REQ sfp_req;
+    YUNSDR_META *rx_meta = trans->rx_meta;
+
+    sfp_req.head = 0xcafefee0 | channel_mask;
+    sfp_req.rxlength = count + sizeof(YUNSDR_READ_REQ) / 4;
+    sfp_req.rxtime_l = (uint32_t)*timestamp;
+    sfp_req.rxtime_h = *timestamp >> 32;
+
+    ret = sendto(handle->cmd_sock, (char *)&sfp_req, sizeof(YUNSDR_READ_REQ), 0,
+            (struct sockaddr *)&handle->cmd_addr, sizeof(handle->cmd_addr));
+    if (ret < 0) {
+        printf("%s failed\n", __func__);
+        return -1;
+    }
+#if defined(__GNUC__)
+    socklen_t addr_len = sizeof(struct sockaddr_in);
+#else
+    int addr_len = sizeof(struct sockaddr_in);
+#endif
+
+    for(int i = 0; i < 4; i++) {
+        if(channel_mask >> i) {
+            char *buf_ptr = (char *)rx_meta;
+            uint32_t all_bytes = count * 4 + sizeof(YUNSDR_META);
+            uint32_t remain = 0;
+            uint32_t nrecv = 0;
+
+            if (wait_for_recv_ready(handle->sockfd[i], 10)) {
+                do {
+                    remain = all_bytes - nrecv;
+retry:		        ret = recvfrom(handle->sockfd[i], buf_ptr, remain, 0,
+                            (struct sockaddr *)&handle->stream_addr[i], &addr_len);
+                    if (ret < 0) {
+                        if (errno == EINTR)
+                            goto retry;
+#if defined(__WINDOWS_) || defined(_WIN32)
+                        printf("recv data error %d!\n", GetLastError());
+#else
+                        printf("recv data error %s!\n", strerror(errno));
+#endif
+                        return -ETIMEDOUT;
+                    }
+                    nrecv += ret;
+                    buf_ptr += ret;
+                } while (all_bytes != nrecv);
+                int16_to_float((float *)buf[i], (short *)rx_meta->payload, count * 2, 1./32767.);
+            } else {
+                return -EIO;
+            }
+        }
+    }
+    *timestamp = (uint64_t)rx_meta->timestamp_h << 32 | rx_meta->timestamp_l;
+
+    return count;
+
+}
+
 int32_t sfp_stream_send(YUNSDR_TRANSPORT *trans, void *buf, uint32_t count, uint8_t channel, uint64_t timestamp)
 {
     int ret;
@@ -448,6 +512,47 @@ int32_t sfp_stream_send2(YUNSDR_TRANSPORT *trans, void *buf, uint32_t count, uin
     return count;
 }
 
+int32_t sfp_stream_send3(YUNSDR_TRANSPORT *trans, const void **buf, uint32_t count, uint8_t channel_mask, uint64_t timestamp, uint32_t flags)
+{
+    int ret;
+    SFP_HANDLE *handle = (SFP_HANDLE *)trans->opaque;
+    YUNSDR_META *tx_meta = trans->tx_meta;
+
+    tx_meta->timestamp_l = (uint32_t)timestamp;
+    tx_meta->timestamp_h = (uint32_t)(timestamp >> 32);
+    if(flags)
+        tx_meta->head        = 0xdeadbeee;
+    else
+        tx_meta->head        = 0xdeadbeef;
+    tx_meta->nsamples = count;
+
+    for(int i = 0; i < 4; i++) {
+        if(channel_mask >> i) {
+            float_to_int16((short *)tx_meta->payload, (float *)buf[i], count * 2, 32767);
+
+            int32_t remain = 0;
+            int32_t nbytes = 0;
+            int32_t sum = count * 4 + sizeof(YUNSDR_META);
+            char *samples = (char *)tx_meta;
+            do {
+                nbytes = MIN(MAX_TX_BULK_SIZE/4, sum);
+                remain = sum - nbytes;
+                ret = sendto(handle->sockfd[i], samples, nbytes, 0,
+                        (struct sockaddr *)&handle->stream_addr[i], sizeof(handle->stream_addr[i]));
+                if (ret < 0) {
+                    printf("%s failed: %s\n", __func__, strerror(errno));
+                    ret = -EIO;
+                    return ret;
+                }
+                samples += nbytes;
+                sum -= nbytes;
+            } while (remain > 0);
+        }
+    }
+
+    return count;
+}
+
 
 int32_t init_interface_sfp(YUNSDR_TRANSPORT *trans)
 {
@@ -489,7 +594,7 @@ int32_t init_interface_sfp(YUNSDR_TRANSPORT *trans)
         if(sysinfo(&s_info) < 0)
             buflen = 100*1024*1024;
         else
-            buflen = s_info.freeram / 50;
+            buflen = s_info.freeram / 100;
         if (setsockopt(handle->sockfd[i], SOL_SOCKET, SO_RCVBUF, &buflen, sizeof(int)) < 0)
             perror("setsockopt:");
         else
@@ -509,8 +614,10 @@ int32_t init_interface_sfp(YUNSDR_TRANSPORT *trans)
     trans->cmd_send_then_recv = sfp_cmd_send_then_recv;
     trans->stream_recv = sfp_stream_recv;
     trans->stream_recv2 = sfp_stream_recv2;
+    trans->stream_recv3 = sfp_stream_recv3;
     trans->stream_send = sfp_stream_send;
     trans->stream_send2 = sfp_stream_send2;
+    trans->stream_send3 = sfp_stream_send3;
 
     return 0;
 }

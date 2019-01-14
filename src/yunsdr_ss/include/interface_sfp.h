@@ -38,7 +38,13 @@
 #define LOCAL_STREAM2_PORT   5003
 #define REMOTE_STREAM2_PORT  1026
 
-#define MAX_RF_STREAM        2
+#define LOCAL_STREAM3_PORT   5004
+#define REMOTE_STREAM3_PORT  1027
+
+#define LOCAL_STREAM4_PORT   5005
+#define REMOTE_STREAM4_PORT  1028
+
+#define MAX_RF_STREAM        4
 
 
 typedef struct interface_handle_sfp {
