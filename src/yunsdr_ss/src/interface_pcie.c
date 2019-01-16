@@ -226,12 +226,6 @@ int32_t pcie_stream_recv3(YUNSDR_TRANSPORT *trans, void **buf, uint32_t count, u
     PCIE_HANDLE *handle = (PCIE_HANDLE *)trans->opaque;
     YUNSDR_META *rx_meta = trans->rx_meta;
     YUNSDR_READ_REQ pcie_cmd;
-#if 0
-    if(channel >= handle->num_of_channel) {
-        printf("%s Invalid channel %u\n", __func__, channel);
-        return -EINVAL;
-    }
-#endif
 
     pcie_cmd.head = 0xcafefee0 | channel_mask;
     pcie_cmd.rxlength = count + sizeof(YUNSDR_READ_REQ) / 4;
@@ -252,7 +246,23 @@ int32_t pcie_stream_recv3(YUNSDR_TRANSPORT *trans, void **buf, uint32_t count, u
                 ret = -EIO;
                 return ret;
             }
+#if defined(__WINDOWS_) || defined(_WIN32)
+            if(buf[i] != NULL)
+                memcpy(buf[i], rx_meta->payload, count*4);
+            else {
+                char fname[64];
+                sprintf(fname, "rx_iqsamples_int16_channel%u.dat", i+1);
+                FILE *fp = fopen(fname, "wb+");
+                if (fp == NULL)
+                    return -EIO;
+                if (fwrite(rx_meta->payload, 1, count*4, fp) < 0)
+                    return -EIO;
+                fclose(fp);
+            }
+
+#else
             int16_to_float((float *)buf[i], (short *)rx_meta->payload, count * 2, 1./32767.);
+#endif
         }
     }
 
@@ -348,12 +358,7 @@ int32_t pcie_stream_send3(YUNSDR_TRANSPORT *trans, const void **buf, uint32_t co
     char *samples;
     PCIE_HANDLE *handle = (PCIE_HANDLE *)trans->opaque;
     YUNSDR_META *tx_meta = trans->tx_meta;
-#if 0
-    if(channel >= handle->num_of_channel) {
-        printf("%s Invalid channel %u\n", __func__, channel);
-        return -EINVAL;
-    }
-#endif
+
     tx_meta->timestamp_l = (uint32_t)timestamp;
     tx_meta->timestamp_h = (uint32_t)(timestamp >> 32);
     if(flags)
@@ -364,7 +369,11 @@ int32_t pcie_stream_send3(YUNSDR_TRANSPORT *trans, const void **buf, uint32_t co
 
     for(int i = 0; i < 4; i++) {
         if(channel_mask >> i) {
+#if defined(__WINDOWS_) || defined(_WIN32)
+            memcpy(tx_meta->payload, buf[i], count*4);
+#else
             float_to_int16((short *)tx_meta->payload, (float *)buf[i], count * 2, 32767);
+#endif
             samples = (void *)tx_meta;
 
             int32_t remain = 0;

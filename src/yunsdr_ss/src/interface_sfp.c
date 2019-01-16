@@ -429,7 +429,22 @@ retry:		        ret = recvfrom(handle->sockfd[i], buf_ptr, remain, 0,
                     nrecv += ret;
                     buf_ptr += ret;
                 } while (all_bytes != nrecv);
+#if defined(__WINDOWS_) || defined(_WIN32)
+                if(buf[i] != NULL)
+                    memcpy(buf[i], rx_meta->payload, count*4);
+                else {
+                    char fname[64];
+                    sprintf(fname, "rx_iqsamples_int16_channel%u.dat", i+1);
+                    FILE *fp = fopen(fname, "wb+");
+                    if (fp == NULL)
+                        return -EIO;
+                    if (fwrite(rx_meta->payload, 1, count*4, fp) < 0)
+                        return -EIO;
+                    fclose(fp);
+                }
+#else
                 int16_to_float((float *)buf[i], (short *)rx_meta->payload, count * 2, 1./32767.);
+#endif
             } else {
                 return -EIO;
             }
@@ -528,7 +543,11 @@ int32_t sfp_stream_send3(YUNSDR_TRANSPORT *trans, const void **buf, uint32_t cou
 
     for(int i = 0; i < 4; i++) {
         if(channel_mask >> i) {
+#if defined(__WINDOWS_) || defined(_WIN32)
+            memcpy(tx_meta->payload, buf[i], count*4);
+#else
             float_to_int16((short *)tx_meta->payload, (float *)buf[i], count * 2, 32767);
+#endif
 
             int32_t remain = 0;
             int32_t nbytes = 0;
