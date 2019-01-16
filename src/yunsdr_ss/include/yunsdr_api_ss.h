@@ -175,15 +175,12 @@ DLLEXPORT int32_t yunsdr_set_tx_fir_en_dis (YUNSDR_DESCRIPTOR *yunsdr, uint8_t r
         uint8_t status);
 
 /***************************************************************************/
-DLLEXPORT int32_t yunsdr_get_ad9361_reg (YUNSDR_DESCRIPTOR *yunsdr, uint8_t rf_id, uint32_t reg,
+DLLEXPORT int32_t yunsdr_get_rfchip_reg (YUNSDR_DESCRIPTOR *yunsdr, uint8_t rf_id, uint32_t reg,
         uint32_t *value);
         
-DLLEXPORT int32_t yunsdr_set_ad9361_reg(YUNSDR_DESCRIPTOR *yunsdr, uint8_t rf_id, uint32_t reg,
+DLLEXPORT int32_t yunsdr_set_rfchip_reg(YUNSDR_DESCRIPTOR *yunsdr, uint8_t rf_id, uint32_t reg,
         uint32_t value);
 
-DLLEXPORT int32_t yunsdr_get_status (YUNSDR_DESCRIPTOR *yunsdr, uint8_t status_id, uint8_t channel, 
-        uint32_t *value);
-        
 /***************************************************************************/        
 DLLEXPORT int32_t yunsdr_set_tx_lo_int_ext (YUNSDR_DESCRIPTOR *yunsdr, uint8_t rf_id,
         uint8_t enable);
@@ -215,7 +212,7 @@ DLLEXPORT int32_t yunsdr_get_model_version(YUNSDR_DESCRIPTOR *yunsdr, uint32_t *
 DLLEXPORT int32_t yunsdr_set_pps_select (YUNSDR_DESCRIPTOR *yunsdr, uint8_t rf_id, PPSModeEnum pps);
 /***************************************************************************/
 DLLEXPORT int32_t yunsdr_enable_timestamp(YUNSDR_DESCRIPTOR *yunsdr, uint8_t rf_id,
-        uint8_t enbale);
+        uint8_t enable);
 DLLEXPORT int32_t yunsdr_read_timestamp(YUNSDR_DESCRIPTOR *yunsdr, uint8_t rf_id, uint64_t *timestamp);
 
 DLLEXPORT int32_t yunsdr_get_channel_event(YUNSDR_DESCRIPTOR *yunsdr, CHANNEL_EVENT event, uint8_t channel, uint32_t *count);

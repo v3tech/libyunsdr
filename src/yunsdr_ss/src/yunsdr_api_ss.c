@@ -304,7 +304,7 @@ int32_t yunsdr_set_tx_fir_en_dis(YUNSDR_DESCRIPTOR *yunsdr, uint8_t rf_id,
     return  yunsdr->trans->cmd_send(yunsdr->trans, rf_id, 7, &status, sizeof(uint8_t));
 }
 
-int32_t yunsdr_get_ad9361_reg(YUNSDR_DESCRIPTOR *yunsdr, uint8_t rf_id, uint32_t reg,
+int32_t yunsdr_get_rfchip_reg(YUNSDR_DESCRIPTOR *yunsdr, uint8_t rf_id, uint32_t reg,
         uint32_t *value)
 {
     int ret;
@@ -318,7 +318,7 @@ int32_t yunsdr_get_ad9361_reg(YUNSDR_DESCRIPTOR *yunsdr, uint8_t rf_id, uint32_t
     return ret;
 }
 
-int32_t yunsdr_set_ad9361_reg(YUNSDR_DESCRIPTOR *yunsdr, uint8_t rf_id, uint32_t reg,
+int32_t yunsdr_set_rfchip_reg(YUNSDR_DESCRIPTOR *yunsdr, uint8_t rf_id, uint32_t reg,
         uint32_t value)
 {
     uint64_t parameter = (uint64_t)value<<32 | reg;
