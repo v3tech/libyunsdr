@@ -239,7 +239,7 @@ int32_t pcie_stream_recv3(YUNSDR_TRANSPORT *trans, void **buf, uint32_t count, u
     }
 
     for(int i = 0; i < 4; i++) {
-        if(channel_mask >> i) {
+        if((channel_mask >> i)&0x1) {
             ret = fpga_recv(handle->fpga, i + 1, rx_meta, pcie_cmd.rxlength, 25000);
             if (ret <= 0) {
                 printf("%s failed\n", __func__);
@@ -247,7 +247,7 @@ int32_t pcie_stream_recv3(YUNSDR_TRANSPORT *trans, void **buf, uint32_t count, u
                 return ret;
             }
 #if defined(__WINDOWS_) || defined(_WIN32)
-            if(buf[i] != NULL)
+            if(*buf != NULL)
                 memcpy(buf[i], rx_meta->payload, count*4);
             else {
                 char fname[64];
@@ -368,7 +368,7 @@ int32_t pcie_stream_send3(YUNSDR_TRANSPORT *trans, const void **buf, uint32_t co
     tx_meta->nsamples = count;
 
     for(int i = 0; i < 4; i++) {
-        if(channel_mask >> i) {
+        if((channel_mask >> i)&0x1) {
 #if defined(__WINDOWS_) || defined(_WIN32)
             memcpy(tx_meta->payload, buf[i], count*4);
 #else

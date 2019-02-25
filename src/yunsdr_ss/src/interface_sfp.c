@@ -405,7 +405,7 @@ int32_t sfp_stream_recv3(YUNSDR_TRANSPORT *trans, void **buf, uint32_t count, ui
 #endif
 
     for(int i = 0; i < 4; i++) {
-        if(channel_mask >> i) {
+        if((channel_mask >> i)&0x1) {
             char *buf_ptr = (char *)rx_meta;
             uint32_t all_bytes = count * 4 + sizeof(YUNSDR_META);
             uint32_t remain = 0;
@@ -430,16 +430,16 @@ retry:		        ret = recvfrom(handle->sockfd[i], buf_ptr, remain, 0,
                     buf_ptr += ret;
                 } while (all_bytes != nrecv);
 #if defined(__WINDOWS_) || defined(_WIN32)
-                if(buf[i] != NULL)
+                if(*buf != NULL)
                     memcpy(buf[i], rx_meta->payload, count*4);
                 else {
                     char fname[64];
                     sprintf(fname, "rx_iqsamples_int16_channel%u.dat", i+1);
                     FILE *fp = fopen(fname, "wb+");
                     if (fp == NULL)
-                        return -EIO;
+                        return -ENFILE;
                     if (fwrite(rx_meta->payload, 1, count*4, fp) < 0)
-                        return -EIO;
+                        return -EPERM;
                     fclose(fp);
                 }
 #else
@@ -542,7 +542,7 @@ int32_t sfp_stream_send3(YUNSDR_TRANSPORT *trans, const void **buf, uint32_t cou
     tx_meta->nsamples = count;
 
     for(int i = 0; i < 4; i++) {
-        if(channel_mask >> i) {
+        if((channel_mask >> i)&0x1) {
 #if defined(__WINDOWS_) || defined(_WIN32)
             memcpy(tx_meta->payload, buf[i], count*4);
 #else
