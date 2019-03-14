@@ -114,7 +114,6 @@ YUNSDR_DESCRIPTOR *yunsdr_open_device(const char *url)
 
 int32_t yunsdr_close_device(YUNSDR_DESCRIPTOR *yunsdr)
 {
-    yunsdr_enable_timestamp(yunsdr, 0, 0);
     __deinit_transport(yunsdr->trans);
     free(yunsdr->trans);
     free(yunsdr);
