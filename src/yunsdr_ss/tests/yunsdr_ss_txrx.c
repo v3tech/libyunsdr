@@ -172,10 +172,13 @@ int main(int argc, char **argv) {
     }
 
     yunsdr_set_ref_clock (yunsdr, 0, INTERNAL_REFERENCE);
+    yunsdr_set_pps_select (yunsdr, 0, PPS_INTERNAL_EN);
     yunsdr_set_vco_select (yunsdr, 0, AUXDAC1);
     yunsdr_set_auxdac1 (yunsdr, 0, 0);
+    yunsdr_set_trxsw_fpga_enable(yunsdr, 0, 0);
     yunsdr_set_rx_ant_enable (yunsdr, 0, 1);
     yunsdr_set_duplex_select (yunsdr, 0, FDD);
+    yunsdr_set_hwbuf_depth(yunsdr, 0, 327680);
 
     uint8_t tx_chipid = 0, rx_chipid = 0;
     if(rf_tx_ch == TX3_CHANNEL || rf_tx_ch == TX4_CHANNEL)
@@ -210,12 +213,6 @@ int main(int argc, char **argv) {
     printf("Set TX gain:    %.1f dB\n", rf_tx_gain);
     printf("Set TX/RX freq: %.2f MHz\n",rf_freq / 1000000);
 
-#if defined(__WINDOWS_) || defined(_WIN32)
-    Sleep(1000);
-#else
-    sleep(1);
-#endif
-
     if (input_filename) {
         load_file(input_filename, &tx_buffer[time_adv_samples], flen*sizeof(iq_t));
     } else {
@@ -226,6 +223,11 @@ int main(int argc, char **argv) {
     uint64_t tstamp; 
 
     yunsdr_enable_timestamp (yunsdr, 0, 1);
+#if defined(__WINDOWS_) || defined(_WIN32)
+    Sleep(2000);
+#else
+    sleep(5);
+#endif
     uint32_t nframe=0;
 
     while(nframe<nof_frames) {
