@@ -60,7 +60,7 @@ struct yunsdr_transport {
     int32_t (*stream_send3)(YUNSDR_TRANSPORT *trans, const void **buf, uint32_t count, uint8_t channel_mask, uint64_t timestamp, uint32_t flags);
 };
 
-int32_t init_transport(YUNSDR_TRANSPORT *trans);
-int32_t deinit_transport(YUNSDR_TRANSPORT *trans);
+int32_t __init_transport(YUNSDR_TRANSPORT *trans);
+int32_t __deinit_transport(YUNSDR_TRANSPORT *trans);
 
 #endif

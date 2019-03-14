@@ -9,7 +9,7 @@
 #include "interface_sfp.h"
 #endif
 
-int32_t init_transport(YUNSDR_TRANSPORT *trans)
+int32_t __init_transport(YUNSDR_TRANSPORT *trans)
 {
     int ret;
     
@@ -73,7 +73,7 @@ int32_t init_transport(YUNSDR_TRANSPORT *trans)
     return ret;
 }
 
-int32_t deinit_transport(YUNSDR_TRANSPORT *trans)
+int32_t __deinit_transport(YUNSDR_TRANSPORT *trans)
 {
     free(trans->rx_meta);
     free(trans->tx_meta);

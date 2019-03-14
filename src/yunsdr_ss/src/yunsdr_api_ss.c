@@ -100,7 +100,7 @@ YUNSDR_DESCRIPTOR *yunsdr_open_device(const char *url)
         return NULL;
     }
 
-    ret = init_transport(yunsdr->trans);
+    ret = __init_transport(yunsdr->trans);
     if (ret < 0) {
         printf("Can not init interface.\n");
         free(yunsdr->trans);
@@ -115,7 +115,7 @@ YUNSDR_DESCRIPTOR *yunsdr_open_device(const char *url)
 int32_t yunsdr_close_device(YUNSDR_DESCRIPTOR *yunsdr)
 {
     yunsdr_enable_timestamp(yunsdr, 0, 0);
-    deinit_transport(yunsdr->trans);
+    __deinit_transport(yunsdr->trans);
     free(yunsdr->trans);
     free(yunsdr);
 
