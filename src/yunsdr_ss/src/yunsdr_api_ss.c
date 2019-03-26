@@ -391,6 +391,110 @@ int32_t yunsdr_set_trxsw_fpga_enable(YUNSDR_DESCRIPTOR *yunsdr, uint8_t rf_id,
     return yunsdr->trans->cmd_send(yunsdr->trans, rf_id, 64, &enable, sizeof(uint8_t));
 }
 
+int32_t yunsdr_set_rxchannel_coef(YUNSDR_DESCRIPTOR *yunsdr, uint8_t rf_id, RF_RX_CHANNEL channel, int16_t coef1, int16_t coef2)
+{
+    uint32_t param = (uint32_t)coef2 << 16 | (uint16_t)coef1;
+
+    switch (channel) {
+    case RX2_CHANNEL:
+        if(yunsdr->trans->cmd_send(yunsdr->trans, rf_id, 35, &param, sizeof(uint32_t)) < 0)
+            return -1;
+        break;
+    case RX3_CHANNEL:
+        if(yunsdr->trans->cmd_send(yunsdr->trans, rf_id, 36, &param, sizeof(uint32_t)) < 0)
+            return -1;
+        break;
+    case RX4_CHANNEL:
+        if(yunsdr->trans->cmd_send(yunsdr->trans, rf_id, 37, &param, sizeof(uint32_t)) < 0)
+            return -1;
+        break;
+    case RX1_CHANNEL:
+    default:
+        break;
+    }
+
+    return 0;
+}
+
+int32_t yunsdr_set_txchannel_coef(YUNSDR_DESCRIPTOR *yunsdr, uint8_t rf_id, RF_TX_CHANNEL channel, int16_t coef1, int16_t coef2)
+{
+    uint32_t param = (uint32_t)coef2 << 16 | (uint16_t)coef1;
+
+    switch (channel) {
+    case TX2_CHANNEL:
+        if(yunsdr->trans->cmd_send(yunsdr->trans, rf_id, 39, &param, sizeof(uint32_t)) < 0)
+            return -1;
+        break;
+    case TX3_CHANNEL:
+        if(yunsdr->trans->cmd_send(yunsdr->trans, rf_id, 40, &param, sizeof(uint32_t)) < 0)
+            return -1;
+        break;
+    case TX4_CHANNEL:
+        if(yunsdr->trans->cmd_send(yunsdr->trans, rf_id, 41, &param, sizeof(uint32_t)) < 0)
+            return -1;
+        break;
+    case TX1_CHANNEL:
+    default:
+        break;
+    }
+
+    return 0;
+}
+
+int32_t yunsdr_enable_rxchannel_corr(YUNSDR_DESCRIPTOR *yunsdr, uint8_t rf_id, RF_RX_CHANNEL channel, uint8_t enable)
+{
+    uint32_t status;
+
+    if(yunsdr->trans->cmd_send_then_recv(yunsdr->trans, 0, 38, &status, sizeof(uint32_t), 0) < 0)
+        return -1;
+    switch (channel) {
+    case RX2_CHANNEL:
+    case RX3_CHANNEL:
+    case RX4_CHANNEL:
+        if(enable)
+            status |= (1 << (channel - 2));
+        else
+            status &= (~(1 << (channel - 2)));
+        break;
+    case RX1_CHANNEL:
+    default:
+        break;
+    }
+
+    if(yunsdr->trans->cmd_send(yunsdr->trans, rf_id, 38, &status, sizeof(uint32_t)) < 0)
+        return -1;
+
+    return 0;
+}
+
+int32_t yunsdr_enable_txchannel_corr(YUNSDR_DESCRIPTOR *yunsdr, uint8_t rf_id, RF_TX_CHANNEL channel, uint8_t enable)
+{
+    uint32_t status;
+
+    if(yunsdr->trans->cmd_send_then_recv(yunsdr->trans, 0, 38, &status, sizeof(uint32_t), 0) < 0)
+        return -1;
+    switch (channel) {
+    case TX2_CHANNEL:
+    case TX3_CHANNEL:
+    case TX4_CHANNEL:
+        if(enable)
+            status |= (1 << (channel + 1));
+        else
+            status &= (~(1 << (channel + 1)));
+        break;
+    case TX1_CHANNEL:
+    default:
+        break;
+    }
+
+    if(yunsdr->trans->cmd_send(yunsdr->trans, rf_id, 38, &status, sizeof(uint32_t)) < 0)
+        return -1;
+
+    return 0;
+}
+
+
+
 int32_t yunsdr_set_hwbuf_depth(YUNSDR_DESCRIPTOR *yunsdr, uint8_t rf_id, uint32_t depth)
 {
     return yunsdr->trans->cmd_send(yunsdr->trans, rf_id, 70, &depth, sizeof(uint32_t));

@@ -210,6 +210,12 @@ DLLEXPORT int32_t yunsdr_get_firmware_version(YUNSDR_DESCRIPTOR *yunsdr, uint32_
 DLLEXPORT int32_t yunsdr_get_model_version(YUNSDR_DESCRIPTOR *yunsdr, uint32_t *version);
 
 DLLEXPORT int32_t yunsdr_set_pps_select (YUNSDR_DESCRIPTOR *yunsdr, uint8_t rf_id, PPSModeEnum pps);
+
+DLLEXPORT int32_t yunsdr_set_rxchannel_coef(YUNSDR_DESCRIPTOR *yunsdr, uint8_t rf_id, RF_RX_CHANNEL channel, int16_t coef1, int16_t coef2);
+DLLEXPORT int32_t yunsdr_enable_rxchannel_corr(YUNSDR_DESCRIPTOR *yunsdr, uint8_t rf_id, RF_RX_CHANNEL channel, uint8_t enable);
+DLLEXPORT int32_t yunsdr_set_txchannel_coef(YUNSDR_DESCRIPTOR *yunsdr, uint8_t rf_id, RF_TX_CHANNEL channel, int16_t coef1, int16_t coef2);
+DLLEXPORT int32_t yunsdr_enable_txchannel_corr(YUNSDR_DESCRIPTOR *yunsdr, uint8_t rf_id, RF_TX_CHANNEL channel, uint8_t enable);
+
 /***************************************************************************/
 DLLEXPORT int32_t yunsdr_enable_timestamp(YUNSDR_DESCRIPTOR *yunsdr, uint8_t rf_id,
         uint8_t enable);
