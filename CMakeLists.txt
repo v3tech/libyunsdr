@@ -148,6 +148,16 @@ install(
 	DESTINATION ${CMAKE_INSTALL_PREFIX}/lib/pkgconfig
 	)
 
+configure_file(
+	${CMAKE_CURRENT_SOURCE_DIR}/libyunsdr_ss.pc.in
+	${CMAKE_CURRENT_BINARY_DIR}/libyunsdr_ss.pc
+	@ONLY)
+
+install(
+	FILES ${CMAKE_CURRENT_BINARY_DIR}/libyunsdr_ss.pc
+	DESTINATION ${CMAKE_INSTALL_PREFIX}/lib/pkgconfig
+	)
+
 # uninstall target
 if(NOT TARGET uninstall)
 	configure_file(
