@@ -34,9 +34,21 @@ if(NOT MSVC)
 endif(NOT MSVC)
 target_link_libraries(yunsdr_ss_tx yunsdr_ss)
 
+SET(YUNSDR_RX_SRC "")
+list(APPEND YUNSDR_RX_SRC ${PROJECT_SOURCE_DIR}/src/yunsdr_ss/tests/yunsdr_ss_rx.c)
+if(MSVC)
+	list(APPEND YUNSDR_RX_SRC
+		${PROJECT_SOURCE_DIR}/src/yunsdr_ss/tests/wingetopt.c)
+endif(MSVC)
+
+ADD_EXECUTABLE(yunsdr_ss_rx ${YUNSDR_RX_SRC})
+if(MSVC)
+	set_target_properties(yunsdr_ss_rx PROPERTIES COMPILE_FLAGS "/MT")
+endif(MSVC)
+target_link_libraries(yunsdr_ss_rx yunsdr_ss)
 
 if(MSVC OR MINGW)
-	INSTALL(TARGETS yunsdr_ss_txrx yunsdr_ss_tx
+	INSTALL(TARGETS yunsdr_ss_txrx yunsdr_ss_tx yunsdr_ss_rx
 		RUNTIME DESTINATION ${CMAKE_INSTALL_PREFIX}/tests/yunsdr_ss
 		LIBRARY DESTINATION ${CMAKE_INSTALL_PREFIX}/tests/yunsdr_ss
 		ARCHIVE DESTINATION ${CMAKE_INSTALL_PREFIX}/tests/yunsdr_ss)
