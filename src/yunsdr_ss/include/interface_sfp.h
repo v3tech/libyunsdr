@@ -44,8 +44,6 @@
 #define LOCAL_STREAM4_PORT   5005
 #define REMOTE_STREAM4_PORT  1028
 
-#define MAX_RF_STREAM        4
-
 
 typedef struct interface_handle_sfp {
     SOCKET sockfd[MAX_RF_STREAM];

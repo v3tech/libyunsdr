@@ -180,6 +180,9 @@ int main(int argc, char **argv) {
     yunsdr_set_duplex_select (yunsdr, 0, FDD);
     yunsdr_set_hwbuf_depth(yunsdr, 0, 327680);
 
+    yunsdr_set_tx_fir_en_dis (yunsdr, 0, 1);
+    yunsdr_set_rx_fir_en_dis (yunsdr, 0, 1);
+    
     uint8_t tx_chipid = 0, rx_chipid = 0;
     if(rf_tx_ch == TX3_CHANNEL || rf_tx_ch == TX4_CHANNEL)
         tx_chipid = 1;

@@ -149,7 +149,7 @@ int32_t pcie_stream_recv(YUNSDR_TRANSPORT *trans, void *buf, uint32_t count, uin
 {
     int ret;
     PCIE_HANDLE *handle = (PCIE_HANDLE *)trans->opaque;
-    YUNSDR_META *rx_meta = trans->rx_meta;
+    YUNSDR_META *rx_meta = trans->rx_meta[channel - 1];
     YUNSDR_READ_REQ pcie_cmd;
 
     if(channel >= handle->num_of_channel) {
@@ -224,7 +224,7 @@ int32_t pcie_stream_recv3(YUNSDR_TRANSPORT *trans, void **buf, uint32_t count, u
 {
     int ret;
     PCIE_HANDLE *handle = (PCIE_HANDLE *)trans->opaque;
-    YUNSDR_META *rx_meta = trans->rx_meta;
+    YUNSDR_META *rx_meta = trans->rx_meta[0];
     YUNSDR_READ_REQ pcie_cmd;
 
     pcie_cmd.head = 0xcafefee0 | channel_mask;
@@ -276,7 +276,7 @@ int32_t pcie_stream_send(YUNSDR_TRANSPORT *trans, void *buf, uint32_t count, uin
     int ret;
     char *samples;
     PCIE_HANDLE *handle = (PCIE_HANDLE *)trans->opaque;
-    YUNSDR_META *tx_meta = trans->tx_meta;
+    YUNSDR_META *tx_meta = trans->tx_meta[channel - 1];
 
     if(channel >= handle->num_of_channel) {
         printf("%s Invalid channel %u\n", __func__, channel);
@@ -315,7 +315,7 @@ int32_t pcie_stream_send2(YUNSDR_TRANSPORT *trans, void *buf, uint32_t count, ui
     int ret;
     char *samples;
     PCIE_HANDLE *handle = (PCIE_HANDLE *)trans->opaque;
-    YUNSDR_META *tx_meta = trans->tx_meta;
+    YUNSDR_META *tx_meta = trans->tx_meta[channel - 1];
 
     if(channel >= handle->num_of_channel) {
         printf("%s Invalid channel %u\n", __func__, channel);
@@ -357,7 +357,7 @@ int32_t pcie_stream_send3(YUNSDR_TRANSPORT *trans, const void **buf, uint32_t co
     int ret;
     char *samples;
     PCIE_HANDLE *handle = (PCIE_HANDLE *)trans->opaque;
-    YUNSDR_META *tx_meta = trans->tx_meta;
+    YUNSDR_META *tx_meta = trans->tx_meta[0];
 
     tx_meta->timestamp_l = (uint32_t)timestamp;
     tx_meta->timestamp_h = (uint32_t)(timestamp >> 32);
@@ -367,7 +367,7 @@ int32_t pcie_stream_send3(YUNSDR_TRANSPORT *trans, const void **buf, uint32_t co
         tx_meta->head        = 0xdeadbeef;
     tx_meta->nsamples = count;
 
-    for(int i = 0; i < 4; i++) {
+    for(int i = 0; i < MAX_RF_STREAM; i++) {
         if((channel_mask >> i)&0x1) {
 #if defined(__WINDOWS_) || defined(_WIN32)
             memcpy(tx_meta->payload, buf[i], count*4);

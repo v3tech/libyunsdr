@@ -6,6 +6,7 @@
 
 #define MAX_BUFFSIZE (32*1024*1024)
 #define MAX_TX_BULK_SIZE (8192*4)
+#define MAX_RF_STREAM        4
 
 #define MIN(x, y)  ((x < y)?x:y)
 
@@ -44,8 +45,8 @@ typedef struct yunsdr_transport YUNSDR_TRANSPORT;
 struct yunsdr_transport {
     void *app_opaque;
     void *opaque;
-    YUNSDR_META *tx_meta;
-    YUNSDR_META *rx_meta;
+    YUNSDR_META *tx_meta[MAX_RF_STREAM];
+    YUNSDR_META *rx_meta[MAX_RF_STREAM];
     INTERFACES type;
     int32_t(*cmd_send)(YUNSDR_TRANSPORT *trans, uint8_t rf_id, uint8_t cmd_id, void *buf, uint32_t len);
     int32_t (*cmd_send_then_recv)(YUNSDR_TRANSPORT *trans, uint8_t rf_id, uint8_t cmd_id, void *buf, uint32_t len, uint8_t with_param);

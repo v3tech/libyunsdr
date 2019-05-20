@@ -12,33 +12,36 @@
 int32_t __init_transport(YUNSDR_TRANSPORT *trans)
 {
     int ret;
-    
-#if defined(__WINDOWS_) || defined(_WIN32)
-    trans->rx_meta = (YUNSDR_META *)_aligned_malloc(MAX_BUFFSIZE + sizeof(YUNSDR_META), 16);
-    if (!trans->rx_meta) {
-        ret = -1;
-    }
-    else {
-        ret = 0;
-    }
 
-    trans->tx_meta = (YUNSDR_META *)_aligned_malloc(MAX_BUFFSIZE + sizeof(YUNSDR_META), 16);
-    if (!trans->tx_meta) {
-        ret = -1;
-    }
-    else {
-        ret = 0;
+    for(int i = 0; i < MAX_RF_STREAM; i++) {
+#if defined(__WINDOWS_) || defined(_WIN32)
+        trans->rx_meta[i] = (YUNSDR_META *)_aligned_malloc(MAX_BUFFSIZE + sizeof(YUNSDR_META), 16);
+        if (!trans->rx_meta[i]) {
+            ret = -1;
+        }
+        else {
+            ret = 0;
+        }
+
+        trans->tx_meta[i] = (YUNSDR_META *)_aligned_malloc(MAX_BUFFSIZE + sizeof(YUNSDR_META), 16);
+        if (!trans->tx_meta[i]) {
+            ret = -1;
+        }
+        else {
+            ret = 0;
+        }
     }
 #else
-    ret = posix_memalign((void **)&trans->rx_meta, 16, sizeof(int16_t) * MAX_BUFFSIZE + sizeof(YUNSDR_META));
-    if(ret) {
-        printf("Failed to alloc memory\n");
-        return -1;
-    }
-    ret = posix_memalign((void **)&trans->tx_meta, 16, sizeof(int16_t) * MAX_BUFFSIZE + sizeof(YUNSDR_META));
-    if(ret) {
-        printf("Failed to alloc memory\n");
-        return -1;
+        ret = posix_memalign((void **)&trans->rx_meta[i], 16, sizeof(int16_t) * MAX_BUFFSIZE + sizeof(YUNSDR_META));
+        if(ret) {
+            printf("Failed to alloc memory\n");
+            return -1;
+        }
+        ret = posix_memalign((void **)&trans->tx_meta[i], 16, sizeof(int16_t) * MAX_BUFFSIZE + sizeof(YUNSDR_META));
+        if(ret) {
+            printf("Failed to alloc memory\n");
+            return -1;
+        }
     }
     ret = 0;
 #endif
@@ -75,9 +78,6 @@ int32_t __init_transport(YUNSDR_TRANSPORT *trans)
 
 int32_t __deinit_transport(YUNSDR_TRANSPORT *trans)
 {
-    free(trans->rx_meta);
-    free(trans->tx_meta);
-
     switch (trans->type) {
     case INTERFACE_PCIE:
 #ifdef ENABLE_PCIE
@@ -95,6 +95,16 @@ int32_t __deinit_transport(YUNSDR_TRANSPORT *trans)
     default:
         break;
 
+    }
+
+    for(int i = 0; i < MAX_RF_STREAM; i++) {
+#if defined(__WINDOWS_) || defined(_WIN32)
+        _aligned_free(trans->rx_meta[i]);
+        _aligned_free(trans->tx_meta[i]);
+#else
+        free(trans->rx_meta[i]);
+        free(trans->tx_meta[i]);
+#endif
     }
 
     return 0;

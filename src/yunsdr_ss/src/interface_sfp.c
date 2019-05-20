@@ -270,7 +270,7 @@ int32_t sfp_stream_recv(YUNSDR_TRANSPORT *trans, void *buf, uint32_t count, uint
 {
     int ret;
     SFP_HANDLE *handle = (SFP_HANDLE *)trans->opaque;
-    YUNSDR_META *rx_meta = trans->rx_meta;
+    YUNSDR_META *rx_meta = trans->rx_meta[channel - 1];
     YUNSDR_READ_REQ sfp_req;
 
     sfp_req.head = 0xcafefee0 | (1 << (channel - 1));
@@ -385,7 +385,7 @@ int32_t sfp_stream_recv3(YUNSDR_TRANSPORT *trans, void **buf, uint32_t count, ui
     int ret;
     SFP_HANDLE *handle = (SFP_HANDLE *)trans->opaque;
     YUNSDR_READ_REQ sfp_req;
-    YUNSDR_META *rx_meta = trans->rx_meta;
+    YUNSDR_META *rx_meta = trans->rx_meta[0];
 
     sfp_req.head = 0xcafefee0 | channel_mask;
     sfp_req.rxlength = count + sizeof(YUNSDR_READ_REQ) / 4;
@@ -404,7 +404,7 @@ int32_t sfp_stream_recv3(YUNSDR_TRANSPORT *trans, void **buf, uint32_t count, ui
     int addr_len = sizeof(struct sockaddr_in);
 #endif
 
-    for(int i = 0; i < 4; i++) {
+    for(int i = 0; i < MAX_RF_STREAM; i++) {
         if((channel_mask >> i)&0x1) {
             char *buf_ptr = (char *)rx_meta;
             uint32_t all_bytes = count * 4 + sizeof(YUNSDR_META);
@@ -460,7 +460,7 @@ int32_t sfp_stream_send(YUNSDR_TRANSPORT *trans, void *buf, uint32_t count, uint
 {
     int ret;
     SFP_HANDLE *handle = (SFP_HANDLE *)trans->opaque;
-    YUNSDR_META *tx_meta = trans->tx_meta;
+    YUNSDR_META *tx_meta = trans->tx_meta[channel - 1];
 
     tx_meta->timestamp_l = (uint32_t)timestamp;
     tx_meta->timestamp_h = (uint32_t)(timestamp >> 32);
@@ -494,7 +494,7 @@ int32_t sfp_stream_send2(YUNSDR_TRANSPORT *trans, void *buf, uint32_t count, uin
 {
     int ret;
     SFP_HANDLE *handle = (SFP_HANDLE *)trans->opaque;
-    YUNSDR_META *tx_meta = trans->tx_meta;
+    YUNSDR_META *tx_meta = trans->tx_meta[channel - 1];
 
     tx_meta->timestamp_l = (uint32_t)timestamp;
     tx_meta->timestamp_h = (uint32_t)(timestamp >> 32);
@@ -531,7 +531,7 @@ int32_t sfp_stream_send3(YUNSDR_TRANSPORT *trans, const void **buf, uint32_t cou
 {
     int ret;
     SFP_HANDLE *handle = (SFP_HANDLE *)trans->opaque;
-    YUNSDR_META *tx_meta = trans->tx_meta;
+    YUNSDR_META *tx_meta = trans->tx_meta[0];
 
     tx_meta->timestamp_l = (uint32_t)timestamp;
     tx_meta->timestamp_h = (uint32_t)(timestamp >> 32);
@@ -541,7 +541,7 @@ int32_t sfp_stream_send3(YUNSDR_TRANSPORT *trans, const void **buf, uint32_t cou
         tx_meta->head        = 0xdeadbeef;
     tx_meta->nsamples = count;
 
-    for(int i = 0; i < 4; i++) {
+    for(int i = 0; i < MAX_RF_STREAM; i++) {
         if((channel_mask >> i)&0x1) {
 #if defined(__WINDOWS_) || defined(_WIN32)
             memcpy(tx_meta->payload, buf[i], count*4);

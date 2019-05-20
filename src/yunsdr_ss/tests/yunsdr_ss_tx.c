@@ -59,8 +59,8 @@ void usage(char *prog)
     printf("\t-s RF TX Sampling frequency [Default %.2f MHz]\n", rf_sampling/1e6);
     printf("\t-C RF TX Channel[1,2,3,4] [Default Channel%u]\n", rf_tx_ch);
     printf("\t-t Single tone offset (Hz) [Default %f]\n", tone_offset_hz);
-	printf("\t-T Test Cycle [Default %d]\n", TEST_CYCLE);
-	printf("\t-N Test Number of tone samples [Default %d]\n", TEST_NSAMPLES);
+	printf("\t-T Test Cycle [Default %lu]\n", TEST_CYCLE);
+	printf("\t-N Test Number of tone samples [Default %lu]\n", TEST_NSAMPLES);
     printf("\t-i File name to read signal from [Default single tone]\n");
     printf("\t-d RF auxdac1 value [Default %u mV]\n", auxdac1);
 }
@@ -201,8 +201,6 @@ int main(int argc, char **argv)
     }
 #endif
     yunsdr_tx_cyclic_enable(yunsdr, 0, 0);
-    yunsdr_set_tx_sampling_freq (yunsdr, 0, rf_sampling);
-    yunsdr_set_tx1_attenuation (yunsdr, 0, (90 - rf_tx_gain) * 1000);
     yunsdr_enable_timestamp (yunsdr, 0, 0);
     yunsdr_enable_timestamp (yunsdr, 0, 1);
 #if defined(__WINDOWS_) || defined(_WIN32)
@@ -354,7 +352,7 @@ void *rf_tx_worker(void *arg)
             timestamp = worker->tx_timestamp;
         } else
             timestamp = 0;
-        if(yunsdr_write_samples_multiport(yunsdr, &worker->buffer, worker->nsamples, worker->channel, timestamp, 0) < 0) {
+        if(yunsdr_write_samples(yunsdr, worker->buffer, worker->nsamples, worker->channel, timestamp) < 0) {
             printf("[%d]tx_timestamp:%" PRId64 ", timeout\n", i, timestamp);
             break;
         }
