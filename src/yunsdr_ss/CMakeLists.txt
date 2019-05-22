@@ -62,9 +62,22 @@ else (HAVE_AVX2)
 	endif(HAVE_AVX)
 endif (HAVE_AVX2)
 
-if(MSVC OR MINGW)
+if(MSVC)
 	add_definitions(-D_WINSOCK_DEPRECATED_NO_WARNINGS)
 	add_definitions(-D_CRT_SECURE_NO_WARNINGS)
+endif(MSVC)
+
+if(MINGW)
+    ADD_CUSTOM_COMMAND(TARGET yunsdr_ss
+        POST_BUILD
+        COMMAND cd ${LIBRARY_OUTPUT_PATH} & gendef libyunsdr_ss.dll
+        COMMENT "Generate def file for libyunsdr_ss.dll"
+    )
+    INSTALL(FILES ${LIBRARY_OUTPUT_PATH}/libyunsdr_ss.def
+		DESTINATION ${CMAKE_INSTALL_PREFIX}/lib)
+endif(MINGW)
+
+if(MSVC OR MINGW)
 	target_link_libraries(yunsdr_ss ws2_32)
 	target_link_libraries(yunsdr_ss_static ws2_32)
 	target_link_libraries(yunsdr_ss ${RIFFA_LIBRARIES})
@@ -80,7 +93,6 @@ if(MSVC OR MINGW)
 
 	INSTALL(FILES ${PROJECT_SOURCE_DIR}/src/yunsdr_ss/include/yunsdr_api_ss.h 
 		DESTINATION ${CMAKE_INSTALL_PREFIX}/include)
-
 else(MSVC OR MINGW)
 	target_link_libraries(yunsdr_ss pthread m)
 	target_link_libraries(yunsdr_ss_static pthread m)

@@ -23,6 +23,10 @@ option(ENABLE_PCIE     "Build library with PCIE Interface support"       ON)
 option(ENABLE_SFP  	   "Build library with SFP Interface support"        ON)
 option(ENABLE_ETHERNET "Build library with ETHERNET Interface support"   ON)
 
+if(MINGW)
+    option(USE_32BITS "Compile for 32bits processors" OFF)
+endif(MINGW)
+
 set(GCC_ARCH native CACHE STRING "GCC compile for specific architecture.")
 
 ########################################################################
@@ -89,6 +93,13 @@ if(CMAKE_C_COMPILER_ID MATCHES "GNU" OR CMAKE_C_COMPILER_ID MATCHES "Clang")
 	endif(NOT HAVE_SSE)
 
 endif(CMAKE_C_COMPILER_ID MATCHES "GNU" OR CMAKE_C_COMPILER_ID MATCHES "Clang")
+
+if(MINGW)
+    if(USE_32BITS)
+        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -m32")
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -m32")
+    endif(USE_32BITS)
+endif(MINGW)
 
 ##############################
 # MS Visual Studio
