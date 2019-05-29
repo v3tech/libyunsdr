@@ -242,6 +242,9 @@ DLLEXPORT int32_t yunsdr_write_samples2(YUNSDR_DESCRIPTOR *yunsdr,
         void *buffer, uint32_t count, RF_TX_CHANNEL channel, uint64_t timestamp, uint32_t flags);
 DLLEXPORT int32_t yunsdr_write_samples_multiport(YUNSDR_DESCRIPTOR *yunsdr,
         const void **buffer, uint32_t count, uint8_t channel_mask, uint64_t timestamp, uint32_t flags);
+DLLEXPORT int32_t yunsdr_write_samples_zerocopy(YUNSDR_DESCRIPTOR *yunsdr,
+        void *buffer, uint32_t count, RF_TX_CHANNEL channel, uint64_t timestamp);
+
 /***************************************************************************/
 DLLEXPORT void float_to_int16(int16_t *dst, const float *src, int n, float mult);
 DLLEXPORT void int16_to_float(float *dst, const int16_t *src, int len, float mult);

@@ -397,7 +397,50 @@ int32_t pcie_stream_send3(YUNSDR_TRANSPORT *trans, const void **buf, uint32_t co
     return count;
 }
 
+int32_t pcie_stream_send4(YUNSDR_TRANSPORT *trans, void *buf, uint32_t count, uint8_t channel, uint64_t timestamp)
+{
+    int ret;
+    char *samples;
+    PCIE_HANDLE *handle = (PCIE_HANDLE *)trans->opaque;
+    YUNSDR_META *tx_meta = (YUNSDR_META *)buf;
 
+    if(tx_meta->head != 0xdeadbeef) {
+        printf("%s Invalid header %u\n", __func__, channel);
+        return -EINVAL;
+    }
+    if(tx_meta->nsamples != count) {
+        printf("%s Invalid data length %u\n", __func__, channel);
+        return -EINVAL;
+    }
+
+    if(channel >= handle->num_of_channel) {
+        printf("%s Invalid channel %u\n", __func__, channel);
+        return -EINVAL;
+    }
+
+    tx_meta->timestamp_l = (uint32_t)timestamp;
+    tx_meta->timestamp_h = (uint32_t)(timestamp >> 32);
+
+    samples = (void *)tx_meta;
+
+    int32_t remain = 0;
+    int32_t nbytes = 0;
+    int32_t sum = count * 4 + sizeof(YUNSDR_META);
+    do {
+        nbytes = MIN(MAX_TX_BULK_SIZE, sum);
+        remain = sum - nbytes;
+        ret = fpga_send(handle->fpga, channel, samples, nbytes / 4, 0, 1, 25000);
+        if (ret < 0) {
+            printf("%s failed\n", __func__);
+            ret = -EIO;
+            return ret;
+        }
+        samples += nbytes;
+        sum -= nbytes;
+    } while (remain > 0);
+
+    return count;
+}
 
 int32_t init_interface_pcie(YUNSDR_TRANSPORT *trans)
 {
@@ -449,6 +492,7 @@ int32_t init_interface_pcie(YUNSDR_TRANSPORT *trans)
     trans->stream_send = pcie_stream_send;
     trans->stream_send2 = pcie_stream_send2;
     trans->stream_send3 = pcie_stream_send3;
+    trans->stream_send4 = pcie_stream_send4;
 
     spinlock_init();
 
