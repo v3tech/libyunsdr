@@ -9,6 +9,7 @@
 #include <assert.h>
 #include <string.h>
 #include <errno.h>
+#include <time.h>
 #if !defined(__WINDOWS_) && !defined(_WIN32)
 #include <unistd.h>
 #else
@@ -543,6 +544,48 @@ int32_t yunsdr_read_timestamp(YUNSDR_DESCRIPTOR *yunsdr, uint8_t rf_id,
 DLLEXPORT int32_t yunsdr_set_pps_select (YUNSDR_DESCRIPTOR *yunsdr, uint8_t rf_id, PPSModeEnum pps)
 {
     return yunsdr->trans->cmd_send(yunsdr->trans, rf_id, 22, &pps, sizeof(uint32_t));
+}
+
+int32_t yunsdr_get_utc(YUNSDR_DESCRIPTOR *yunsdr, uint8_t rf_id, struct tm *ltime)
+{
+    int32_t ret;
+    uint64_t val;
+
+    ret = yunsdr->trans->cmd_send_then_recv(yunsdr->trans, rf_id, 42, &val, sizeof(uint64_t), 0);
+    if(ret < 0)
+        return ret;
+
+    ltime->tm_hour = (val >> 16 & 0xff) + 8;
+    ltime->tm_min = val >> 8 & 0xff;
+    ltime->tm_sec = val & 0xff;
+    ltime->tm_mday = val >> 24 & 0xff;
+
+    ltime->tm_mon = (val >> 32) & 0xff;
+    ltime->tm_year = __be16_to_cpu((val >> 40) & 0xffff);
+
+    return 0;
+}
+
+int32_t yunsdr_get_xyz(YUNSDR_DESCRIPTOR *yunsdr, uint8_t rf_id, struct xyz_t *xyz)
+{
+    int32_t ret;
+    uint64_t x, y, z;
+
+    ret = yunsdr->trans->cmd_send_then_recv(yunsdr->trans, rf_id, 43, &x, sizeof(uint64_t), 0);
+    if(ret < 0)
+        return ret;
+    ret = yunsdr->trans->cmd_send_then_recv(yunsdr->trans, rf_id, 44, &y, sizeof(uint64_t), 0);
+    if(ret < 0)
+        return ret;
+    ret = yunsdr->trans->cmd_send_then_recv(yunsdr->trans, rf_id, 45, &z, sizeof(uint64_t), 0);
+    if(ret < 0)
+        return ret;
+
+    xyz->latitude = __be64_to_cpu(x) * 180/3.1415926;
+    xyz->longitude = __be64_to_cpu(y) * 180/3.1415926;
+    xyz->altitude = __be64_to_cpu(z);
+
+    return 0;
 }
 
 int32_t yunsdr_read_samples(YUNSDR_DESCRIPTOR *yunsdr,

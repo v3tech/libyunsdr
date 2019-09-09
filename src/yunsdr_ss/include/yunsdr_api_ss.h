@@ -84,6 +84,61 @@ typedef enum pps_enable {
     PPS_EXTERNAL_EN,
 }PPSModeEnum;
 
+typedef union long64_t DOUBLEType;
+union long64_t {
+    double f;
+    uint64_t l;
+    struct {
+        uint8_t llo1;
+        uint8_t lo1;
+        uint8_t hi1;
+        uint8_t hhi1;
+        uint8_t llo2;
+        uint8_t lo2;
+        uint8_t hi2;
+        uint8_t hhi2;
+    }b;
+};
+
+static inline double __be64_to_cpu(uint64_t p)
+{
+    DOUBLEType tmpf;
+    tmpf.b.llo1 = p>>56&0xff;
+    tmpf.b.lo1  = p>>48&0xff;
+    tmpf.b.hi1  = p>>40&0xff;
+    tmpf.b.hhi1 = p>>32&0xff;
+    tmpf.b.llo2 = p>>24&0xff;
+    tmpf.b.lo2  = p>>16&0xff;
+    tmpf.b.hi2  = p>>8&0xff;
+    tmpf.b.hhi2 = p&0xff;
+
+    return tmpf.f;
+}
+
+union SHORTType {
+    int16_t l;
+    struct {
+        uint8_t lo;
+        uint8_t hi;
+    }b;
+};
+
+static inline uint16_t __be16_to_cpu(uint16_t p)
+{
+    union SHORTType tmp;
+
+    tmp.b.lo = p>>8&0xff;
+    tmp.b.hi = p&0xff;
+
+    return tmp.l;
+}
+
+struct xyz_t {
+    double longitude;
+    double latitude;
+    double altitude;
+};
+
 /***************************************************************************/
 DLLEXPORT uint64_t yunsdr_ticksToTimeNs(const uint64_t ticks, const double rate);
 DLLEXPORT uint64_t yunsdr_timeNsToTicks(const uint64_t timeNs, const double rate);
@@ -223,6 +278,8 @@ DLLEXPORT int32_t yunsdr_read_timestamp(YUNSDR_DESCRIPTOR *yunsdr, uint8_t rf_id
 
 DLLEXPORT int32_t yunsdr_get_channel_event(YUNSDR_DESCRIPTOR *yunsdr, CHANNEL_EVENT event, uint8_t channel, uint32_t *count);
 
+DLLEXPORT int32_t yunsdr_get_utc(YUNSDR_DESCRIPTOR *yunsdr, uint8_t rf_id, struct tm *ltime);
+DLLEXPORT int32_t yunsdr_get_xyz(YUNSDR_DESCRIPTOR *yunsdr, uint8_t rf_id, struct xyz_t *xyz);
 /***************************************************************************/
 DLLEXPORT int32_t yunsdr_read_samples(YUNSDR_DESCRIPTOR *yunsdr,
         void *buffer, uint32_t count, RF_RX_CHANNEL channel, uint64_t *timestamp);

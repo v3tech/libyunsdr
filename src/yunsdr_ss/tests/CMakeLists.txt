@@ -47,8 +47,20 @@ if(MSVC)
 endif(MSVC)
 target_link_libraries(yunsdr_ss_rx yunsdr_ss)
 
+SET(YUNSDR_GPS_SRC "")
+list(APPEND YUNSDR_GPS_SRC ${PROJECT_SOURCE_DIR}/src/yunsdr_ss/tests/yunsdr_ss_gps.c)
+if(MSVC)
+	list(APPEND YUNSDR_GPS_SRC ${PROJECT_SOURCE_DIR}/src/yunsdr_ss/tests/wingetopt.c)
+endif(MSVC)
+
+ADD_EXECUTABLE(yunsdr_ss_gps ${YUNSDR_GPS_SRC})
+if(MSVC)
+	set_target_properties(yunsdr_ss_gps PROPERTIES COMPILE_FLAGS "/MT")
+endif(MSVC)
+target_link_libraries(yunsdr_ss_gps yunsdr_ss)
+
 if(MSVC OR MINGW)
-	INSTALL(TARGETS yunsdr_ss_txrx yunsdr_ss_tx yunsdr_ss_rx
+	INSTALL(TARGETS yunsdr_ss_txrx yunsdr_ss_tx yunsdr_ss_rx yunsdr_ss_gps
 		RUNTIME DESTINATION ${CMAKE_INSTALL_PREFIX}/tests/yunsdr_ss
 		LIBRARY DESTINATION ${CMAKE_INSTALL_PREFIX}/tests/yunsdr_ss
 		ARCHIVE DESTINATION ${CMAKE_INSTALL_PREFIX}/tests/yunsdr_ss)
